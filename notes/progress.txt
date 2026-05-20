@@ -1,0 +1,73 @@
+DeleGate · Build progress log
+===========================================
+
+DAY 0 (today) · Scaffold complete
+  ✓ Next.js 14 + TS + Tailwind config
+  ✓ wagmi v2 + viem + Base Sepolia
+  ✓ MetaMask Delegation Toolkit wiring (src/lib/smart-account.ts)
+  ✓ 1Shot Permissionless Relayer client (src/lib/oneshot.ts)
+  ✓ Venice AI server-only client + JSON-only system prompt (src/lib/venice.ts)
+  ✓ x402 client (payingFetch) + base64 payload codec (src/lib/x402.ts)
+  ✓ zustand session store with daily-budget reset (src/lib/store.ts)
+  ✓ Landing (/) with grid-bg hero + 4 pillars + 3-step
+  ✓ /agent — connect → upgrade → sign delegation flow
+  ✓ /dashboard — start/pause agent, live reasoning trace, tx links
+  ✓ /api/agent/think — Venice tick with policy guard
+  ✓ /api/agent/execute — 1Shot relayer submission (real path gated by env)
+  ✓ /api/seller/price — x402-gated demo oracle
+  ✓ .devcontainer for Codespaces
+  ✓ README with track-coverage table + AI/MetaMask integration sections
+  ✓ notes/demo-script.md (90s shot list)
+  ✓ notes/x-threads.md (3 threads for $100 social track)
+
+NEXT: Day 1 (post-Ohlarr)
+  □ pnpm install
+  □ pnpm dev — verify landing renders, MetaMask connects
+  □ Get WalletConnect project id + Venice key into .env.local
+  □ First real delegation signature on Base Sepolia
+  □ Confirm Smart Account address derivation matches kit docs
+  □ Push to github.com/thesithunyein/delegate
+  □ Connect to Vercel, deploy to delegate-xyz.vercel.app
+
+NEXT: Day 2-3
+  □ Wire 1Shot relayer real path: build redeemDelegations() calldata
+    from the kit; pack v0.7 PackedUserOperation
+  □ Sign with AGENT_PRIVATE_KEY server-side
+  □ Flip ENABLE_REAL_RELAY=1 in Vercel env
+  □ Verify a real swap settles end-to-end on Base Sepolia
+  □ Document the kernel deploy in notes/day9-kernel.md
+
+NEXT: Day 4-7
+  □ Wire real x402 buyer flow (currently /api/agent/think falls back to
+    synth on 402); use viem signTypedData with EIP-3009 from a server-side
+    EOA hot-derived from the user's delegation
+  □ Replace synthetic price stream with real Pyth/Chainlink fetch on the
+    seller side
+  □ Webhook listener for 1Shot relayer status updates (rules say this
+    "scores higher" for the 1Shot track)
+
+NEXT: Day 8-10
+  □ Polish: loading/empty/error states on every page
+  □ Mobile responsive pass
+  □ Lighthouse > 95 on /
+  □ Hero GIF for README (5s loop of the agent making a decision)
+  □ Architecture diagram (Excalidraw → SVG)
+  □ Domain: register delegate.dev or similar (~$10)
+
+NEXT: Day 11-12
+  □ Record demo video per notes/demo-script.md
+  □ Edit, captions, music
+  □ Upload to YouTube unlisted + embed in README
+
+NEXT: Day 13
+  □ Fill the Typeform submission
+  □ Post X thread #3 with demo + tags
+  □ Submit
+  □ Done
+
+OPEN QUESTIONS
+  - Confirm exact 1Shot RPC method names (`relayer_sendUserOperation`?
+    docs need a re-read once we have the kit running)
+  - Confirm Venice exact model id for free tier ("llama-3.3-70b" assumed)
+  - Confirm Base Sepolia is supported by 1Shot Permissionless Relayer
+    (fallback: Ethereum Sepolia — both work for the bounty)

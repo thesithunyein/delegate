@@ -1,0 +1,230 @@
+"use client";
+
+import { useState } from "react";
+import { useAccount, useWalletClient } from "wagmi";
+import { Navbar } from "@/components/navbar";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { ConnectButton } from "@/components/connect-button";
+import {
+  buildAgentDelegation,
+  getUserSmartAccount,
+  signDelegation,
+} from "@/lib/smart-account";
+import { useSession } from "@/lib/store";
+import { shortAddr } from "@/lib/utils";
+import { CHAIN, EXPLORER_URL } from "@/lib/constants";
+import { Bot, Check, Loader2, ShieldCheck, Sparkles } from "lucide-react";
+import { toast } from "sonner";
+import type { Address } from "viem";
+
+export default function AgentPage() {
+  const { address, isConnected } = useAccount();
+  const { data: walletClient } = useWalletClient();
+  const session = useSession();
+
+  const [dailyUsdc, setDailyUsdc] = useState(500);
+  const [durationDays, setDurationDays] = useState(30);
+  const [busy, setBusy] = useState(false);
+  const [step, setStep] = useState<"idle" | "upgrade" | "delegate" | "done">(
+    session.delegation ? "done" : "idle",
+  );
+
+  const agentAddress = (session.agentAddress ??
+    "0x000000000000000000000000000000000000bEEF") as Address;
+
+  async function handleDelegate() {
+    if (!isConnected || !address || !walletClient) {
+      toast.error("Connect MetaMask first");
+      return;
+    }
+    setBusy(true);
+    try {
+      setStep("upgrade");
+      toast.info("Building Smart Account…");
+      const sa = await getUserSmartAccount({ owner: address, walletClient });
+      session.setAccounts({ smart: sa.address, agent: agentAddress });
+
+      setStep("delegate");
+      toast.info("Sign the delegation in MetaMask");
+      const del = await buildAgentDelegation({
+        smartAccount: sa,
+        policy: { agent: agentAddress, dailyUsdc, durationDays },
+      });
+      const signed = await signDelegation({ smartAccount: sa, delegation: del });
+      session.setDelegation(signed);
+
+      setStep("done");
+      toast.success("Agent hired. Open the dashboard.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e));
+      setStep("idle");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <Navbar />
+      <main className="container max-w-3xl py-12">
+        <div className="mb-8">
+          <h1 className="text-3xl font-semibold tracking-tight">Hire your agent</h1>
+          <p className="mt-2 text-muted-foreground">
+            One signature delegates scoped, time-bounded spending power. The
+            EVM enforces the rules — not us, not the agent.
+          </p>
+        </div>
+
+        {!isConnected ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Connect your wallet</CardTitle>
+              <CardDescription>
+                {CHAIN.name} · ERC-7702 + MetaMask Smart Accounts
+              </CardDescription>
+            </CardHeader>
+            <CardFooter>
+              <ConnectButton />
+            </CardFooter>
+          </Card>
+        ) : (
+          <div className="grid gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ShieldCheck className="size-4" /> Permission box
+                </CardTitle>
+                <CardDescription>
+                  These are the only actions your agent will be able to take.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-5">
+                <Field
+                  label="Daily USDC budget"
+                  hint="Hard cap enforced by an erc20Period caveat. Resets every 24h."
+                >
+                  <input
+                    type="number"
+                    min={10}
+                    max={5000}
+                    step={10}
+                    value={dailyUsdc}
+                    onChange={(e) => setDailyUsdc(Number(e.target.value))}
+                    className="h-11 w-full rounded-lg border border-border bg-background px-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </Field>
+                <Field
+                  label="Delegation lifetime"
+                  hint="Timestamp caveat. After this, the delegation is dead even if you forget."
+                >
+                  <select
+                    value={durationDays}
+                    onChange={(e) => setDurationDays(Number(e.target.value))}
+                    className="h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <option value={1}>1 day</option>
+                    <option value={7}>7 days</option>
+                    <option value={30}>30 days</option>
+                    <option value={90}>90 days</option>
+                  </select>
+                </Field>
+                <div className="rounded-lg border border-border bg-secondary/40 p-4 text-sm">
+                  <p className="font-medium">Allowed targets</p>
+                  <ul className="mt-2 space-y-1 font-mono text-xs text-muted-foreground">
+                    <li>· USDC (ERC-20 approve, transfer)</li>
+                    <li>· WETH (wrap / unwrap)</li>
+                    <li>· Uniswap V3 SwapRouter02 (exactInputSingle)</li>
+                  </ul>
+                </div>
+                <div className="rounded-lg border border-border bg-secondary/40 p-4 text-sm">
+                  <p className="font-medium">Agent address</p>
+                  <p className="mt-1 font-mono text-xs text-muted-foreground">
+                    {shortAddr(agentAddress, 8)}
+                  </p>
+                </div>
+              </CardContent>
+              <CardFooter className="flex flex-col items-stretch gap-3">
+                <Button
+                  size="lg"
+                  onClick={handleDelegate}
+                  disabled={busy || step === "done"}
+                  className="gap-2"
+                >
+                  {busy ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+                  {step === "done"
+                    ? "Agent hired"
+                    : busy
+                      ? step === "upgrade"
+                        ? "Building Smart Account…"
+                        : "Awaiting signature…"
+                      : "Sign delegation"}
+                </Button>
+                {step === "done" && session.delegation && (
+                  <DoneCard
+                    smart={session.smartAccountAddress!}
+                    signedAt={session.delegation.signedAt}
+                  />
+                )}
+              </CardFooter>
+            </Card>
+          </div>
+        )}
+      </main>
+    </>
+  );
+}
+
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="grid gap-1.5">
+      <span className="text-sm font-medium">{label}</span>
+      {children}
+      <span className="text-xs text-muted-foreground">{hint}</span>
+    </label>
+  );
+}
+
+function DoneCard({ smart, signedAt }: { smart: Address; signedAt: number }) {
+  return (
+    <div className="rounded-lg border border-emerald-400/30 bg-emerald-400/5 p-4 text-sm">
+      <div className="mb-2 flex items-center gap-2 font-medium text-emerald-400">
+        <Check className="size-4" /> Delegation signed
+      </div>
+      <div className="grid gap-1 font-mono text-xs text-muted-foreground">
+        <span>Smart Account:&nbsp;
+          <a
+            className="text-foreground underline-offset-4 hover:underline"
+            href={`${EXPLORER_URL}/address/${smart}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {shortAddr(smart, 8)}
+          </a>
+        </span>
+        <span>Signed at: {new Date(signedAt).toLocaleString()}</span>
+      </div>
+      <a
+        href="/dashboard"
+        className="mt-3 inline-flex items-center gap-1 text-sm text-foreground hover:underline"
+      >
+        <Bot className="size-4" /> Open the dashboard
+      </a>
+    </div>
+  );
+}
