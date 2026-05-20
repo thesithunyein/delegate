@@ -46,7 +46,9 @@ export async function getUserSmartAccount(params: {
   walletClient: WalletClient;
 }) {
   const smartAccount = await toMetaMaskSmartAccount({
-    client: publicClient,
+    // Cast: viem's Block.transactions union widened in 2.22 vs what the
+    // delegation-toolkit's generic constraint pins to. Runtime is identical.
+    client: publicClient as unknown as Parameters<typeof toMetaMaskSmartAccount>[0]["client"],
     implementation: Implementation.Hybrid,
     deployParams: [params.owner, [], [], []],
     deploySalt: "0x0000000000000000000000000000000000000000000000000000000000000000",
