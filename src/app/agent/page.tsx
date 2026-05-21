@@ -2,10 +2,8 @@
 
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useAccount, useChainId, useSwitchChain } from "wagmi";
-import { getWalletClient } from "wagmi/actions";
-import { baseSepolia } from "wagmi/chains";
-import { wagmiConfig } from "@/lib/wagmi";
+import { useAccount } from "wagmi";
+import { getOrCreateSessionAccount } from "@/lib/session-account";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import {
@@ -119,9 +117,6 @@ export default function AgentPage() {
 
 function AgentInner() {
   const { address, isConnected } = useAccount();
-  const chainId = useChainId();
-  const { switchChainAsync } = useSwitchChain();
-  const wrongChain = isConnected && chainId !== baseSepolia.id;
   const session = useSession();
   const searchParams = useSearchParams();
   const presetKey = parsePreset(searchParams.get("preset"));
@@ -142,47 +137,16 @@ function AgentInner() {
       toast.error("Connect MetaMask first");
       return;
     }
-    // Always attempt the chain switch — useChainId can be stale, and wagmi
-    // treats switchChain as idempotent (no-op if already on target).
-    try {
-      toast.info("Ensuring Base Sepolia…");
-      await switchChainAsync({ chainId: baseSepolia.id });
-    } catch {
-      toast.error(
-        "Please switch your wallet to Base Sepolia (chain 84532), then click Sign delegation again.",
-      );
-      return;
-    }
-    // Imperative fetch bypasses the useWalletClient hook hydration race that
-    // happens right after a chain switch.
-    let walletClient;
-    try {
-      walletClient = await getWalletClient(wagmiConfig, {
-        chainId: baseSepolia.id,
-      });
-    } catch (err) {
-      const msg = String(err);
-      if (/chain/i.test(msg) || /ConnectorChainMismatch/i.test(msg)) {
-        toast.error(
-          "Wallet is reporting the wrong chain. Open MetaMask, manually switch to Base Sepolia, then click Sign delegation again.",
-        );
-        return;
-      }
-      throw err;
-    }
-    if (!walletClient) {
-      toast.error("Could not get a wallet client. Reconnect MetaMask and retry.");
-      return;
-    }
     setBusy(true);
     try {
       setStep("upgrade");
-      toast.info("Building Smart Account…");
-      const sa = await getUserSmartAccount({ owner: address, walletClient });
+      toast.info("Building session smart account…");
+      const sessionAccount = getOrCreateSessionAccount();
+      const sa = await getUserSmartAccount({ sessionAccount });
       session.setAccounts({ smart: sa.address, agent: agentAddress });
 
       setStep("delegate");
-      toast.info("Sign the delegation in MetaMask");
+      toast.info("Signing delegation with session key…");
       const del = await buildAgentDelegation({
         smartAccount: sa,
         policy: { agent: agentAddress, dailyUsdc, durationDays },
@@ -299,11 +263,9 @@ function AgentInner() {
                     ? "Agent hired"
                     : busy
                       ? step === "upgrade"
-                        ? "Building Smart Account…"
-                        : "Awaiting signature…"
-                      : wrongChain
-                        ? "Switch to Base Sepolia"
-                        : "Sign delegation"}
+                        ? "Building session account…"
+                        : "Signing delegation…"
+                      : "Hire your agent"}
                 </Button>
                 {step === "done" && session.delegation && (
                   <DoneCard

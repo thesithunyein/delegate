@@ -35,7 +35,7 @@ import {
   createPublicClient,
   type Address,
   type Hex,
-  type WalletClient,
+  type PrivateKeyAccount,
   parseUnits,
 } from "viem";
 import { CHAIN, RPC_URL, USDC_ADDRESS, UNISWAP_ROUTER, WETH_ADDRESS } from "./constants";
@@ -46,23 +46,28 @@ export const publicClient = createPublicClient({
 });
 
 /**
- * Build the user's Stateless7702 MetaMask Smart Account at their EOA address.
+ * Build a Stateless7702 MetaMask Smart Account whose signer is the local
+ * session account (see `src/lib/session-account.ts`).
  *
- * Per the Smart Accounts Kit EIP-7702 quickstart, `Stateless7702` upgrades
- * the existing EOA in place rather than deploying a fresh contract account.
- * The smart account address equals the EOA address — same on BaseScan,
- * same in MetaMask, same everywhere. This is the literal interpretation of
- * our "your same address upgrades" pitch.
+ * Why a session account instead of MetaMask wallet client:
+ *   MetaMask's signature-controller currently rejects delegation typed-data
+ *   from "internal" (user-EOA) accounts. Until that's fixed upstream, the
+ *   blessed pattern is signer-agnostic embedded wallets (Privy / Dynamic /
+ *   Embedded). DeleGate uses the same approach — a local session keypair
+ *   that signs delegations transparently. MetaMask is still connected for
+ *   identity and as the eventual on-chain authorization source.
+ *
+ * The smart-account address equals the session account address (Stateless7702
+ * upgrades the *signer's* EOA in place).
  */
 export async function getUserSmartAccount(params: {
-  owner: Address;
-  walletClient: WalletClient;
+  sessionAccount: PrivateKeyAccount;
 }) {
   const smartAccount = await toMetaMaskSmartAccount({
     client: publicClient,
     implementation: Implementation.Stateless7702,
-    address: params.owner,
-    signer: { walletClient: params.walletClient },
+    address: params.sessionAccount.address,
+    signer: { account: params.sessionAccount },
   });
   return smartAccount;
 }
