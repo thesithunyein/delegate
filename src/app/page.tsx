@@ -1,8 +1,19 @@
 import Link from "next/link";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Shield, Zap, Brain, Coins, ExternalLink } from "lucide-react";
-import { APP_NAME, APP_TAGLINE } from "@/lib/constants";
+import {
+  ArrowRight,
+  Shield,
+  Zap,
+  Brain,
+  Coins,
+  ExternalLink,
+  TrendingUp,
+  Scale,
+  Gift,
+  Repeat,
+} from "lucide-react";
+import { APP_NAME, APP_TAGLINE, APP_SUBHEAD } from "@/lib/constants";
 
 export default function Home() {
   return (
@@ -21,11 +32,15 @@ export default function Home() {
               <h1 className="text-balance text-5xl font-semibold tracking-tight md:text-7xl">
                 {APP_TAGLINE}
               </h1>
-              <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg text-muted-foreground">
-                {APP_NAME} lets you grant a scoped, revocable on-chain spending
-                power to an AI trader. It reasons with Venice AI, pays for its
-                own data via x402, and pays gas in USDC through 1Shot&apos;s
-                permissionless relayer. You never sign another transaction.
+              <p className="mx-auto mt-5 max-w-2xl text-pretty text-xl text-foreground/80 md:text-2xl">
+                {APP_SUBHEAD}
+              </p>
+              <p className="mx-auto mt-6 max-w-2xl text-pretty text-base text-muted-foreground">
+                {APP_NAME} grants a scoped, revocable on-chain permission to an
+                autonomous agent. It reasons with Venice AI, pays for its own
+                data via x402, and pays gas in USDC through 1Shot&apos;s
+                permissionless relayer. The EVM enforces your budget &mdash;
+                not us, not the agent.
               </p>
               <div className="mt-9 flex items-center justify-center gap-3">
                 <Button asChild size="lg" className="gap-2">
@@ -42,24 +57,36 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Demo card */}
-            <div className="mx-auto mt-16 max-w-3xl rounded-xl border border-border bg-card/60 p-1 shadow-xl shadow-black/40 backdrop-blur">
-              <div className="rounded-lg border border-border/70 bg-background p-5 font-mono text-[13px] leading-relaxed">
-                <span className="text-muted-foreground">{`// Grant your agent ≤ $500/day, USDC↔ETH on Uniswap, 30 days`}</span>
-                {"\n"}
-                <span className="text-foreground">const</span>{" "}
-                <span className="text-emerald-400">delegation</span> ={" "}
-                <span className="text-foreground">await</span> smartAccount.
-                <span className="text-sky-400">signDelegation</span>({"{"}
-                {"\n"}
-                {"  "}to: agent.address,{"\n"}
-                {"  "}scope: {"{"} type:{" "}
-                <span className="text-amber-300">&apos;erc20PeriodTransfer&apos;</span>,{" "}
-                periodAmount: <span className="text-violet-400">500_000_000n</span>{" "}
-                {"}"},{"\n"}
-                {"  "}caveats: [allowedTargets, timestamp, dailyCap],{"\n"}
-                {"}"});{"\n"}
-                <span className="text-muted-foreground">{`// Agent now trades inside the box. Gas paid in USDC.`}</span>
+            {/* Use cases */}
+            <div className="mx-auto mt-20 max-w-5xl">
+              <p className="mb-6 text-center text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                Pick a preset agent
+              </p>
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+                <UseCase
+                  icon={<TrendingUp className="size-4" />}
+                  title="Trader"
+                  budget="≤ $500/day"
+                  desc="Watches RSI, swaps USDC↔ETH on Uniswap when signals fire."
+                />
+                <UseCase
+                  icon={<Scale className="size-4" />}
+                  title="Rebalancer"
+                  budget="60/40 target"
+                  desc="Keeps your portfolio at target weights. Triggers on drift > 5%."
+                />
+                <UseCase
+                  icon={<Gift className="size-4" />}
+                  title="Claimer"
+                  budget="≤ $20/wk gas"
+                  desc="Claims airdrops & yields the moment they unlock. You keep sleeping."
+                />
+                <UseCase
+                  icon={<Repeat className="size-4" />}
+                  title="Subscriber"
+                  budget="$15/mo cap"
+                  desc="Pays your on-chain subscriptions. Cancels if balance < threshold."
+                />
               </div>
             </div>
           </div>
@@ -69,11 +96,11 @@ export default function Home() {
         <section className="container py-24">
           <div className="mb-12 max-w-2xl">
             <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">
-              The four primitives, in one workflow.
+              Four primitives. One workflow. Zero custody risk.
             </h2>
             <p className="mt-3 text-muted-foreground">
               {APP_NAME} composes the latest agentic standards on Ethereum so
-              you can ship autonomy without giving up custody.
+              you can ship autonomy without giving up your keys.
             </p>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -121,7 +148,7 @@ export default function Home() {
                 {
                   n: "03",
                   t: "Walk away",
-                  d: "The agent watches markets, pays for data via x402, and executes inside the box. You revoke any time.",
+                  d: "The agent watches state, pays for data via x402, and executes inside the box. You revoke any time.",
                 },
               ].map((s) => (
                 <li
@@ -145,7 +172,7 @@ export default function Home() {
             Ready to hire your first agent?
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
-            Set a budget. Sign one delegation. Watch it trade.
+            Pick a preset. Set a budget. Sign one delegation. Walk away.
           </p>
           <div className="mt-8 flex items-center justify-center gap-3">
             <Button asChild size="lg" className="gap-2">
@@ -191,5 +218,42 @@ function Pillar({
       <h3 className="text-base font-semibold">{title}</h3>
       <p className="mt-2 text-sm text-muted-foreground">{text}</p>
     </div>
+  );
+}
+
+function UseCase({
+  icon,
+  title,
+  budget,
+  desc,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  budget: string;
+  desc: string;
+}) {
+  return (
+    <Link
+      href="/agent"
+      className="group rounded-xl border border-border bg-card/60 p-5 text-left transition-colors hover:border-foreground/40 hover:bg-card"
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex size-7 items-center justify-center rounded-md bg-secondary text-foreground">
+            {icon}
+          </span>
+          <span className="text-sm font-semibold">{title}</span>
+        </div>
+        <span className="font-mono text-[10px] text-muted-foreground">
+          {budget}
+        </span>
+      </div>
+      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+        {desc}
+      </p>
+      <div className="mt-3 flex items-center gap-1 text-[11px] font-medium text-foreground/80 opacity-0 transition-opacity group-hover:opacity-100">
+        Hire <ArrowRight className="size-3" />
+      </div>
+    </Link>
   );
 }

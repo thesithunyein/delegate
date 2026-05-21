@@ -33,6 +33,8 @@ export const WETH_ADDRESS =
   "0x4200000000000000000000000000000000000006" as const;
 
 export const APP_NAME = "DeleGate";
-export const APP_TAGLINE = "Hire an AI agent. Set a budget. Walk away.";
+export const APP_TAGLINE = "Hire an AI to handle your on-chain chores.";
+export const APP_SUBHEAD =
+  "Trade, rebalance, claim airdrops, pay subs — without giving up your keys.";
 export const APP_DESCRIPTION =
-  "Delegate scoped, on-chain spending power to an AI agent via MetaMask Smart Accounts (ERC-7710). The agent reasons with Venice AI, pays for data via x402, and pays its own gas in USDC through 1Shot's permissionless relayer.";
+  "DeleGate lets you grant a scoped, revocable on-chain permission to an autonomous AI agent. Pick a preset — trader, rebalancer, claimer, subscriber — set a budget, sign one ERC-7710 delegation. The agent reasons with Venice AI, pays for its own data via x402, and pays gas in USDC through 1Shot's permissionless relayer. You never sign another transaction.";

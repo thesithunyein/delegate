@@ -1,10 +1,14 @@
 # DeleGate
 
-> **Hire an AI agent. Set a budget. Walk away.**
+> **Hire an AI to handle your on-chain chores.**
 >
-> An autonomous on-chain trading agent you can trust — because the EVM, not the agent, enforces the rules.
+> Trade, rebalance, claim airdrops, pay subscriptions — without giving up your keys.
 
-DeleGate lets a user grant a scoped, revocable, time-bounded delegation to an AI trader via **MetaMask Smart Accounts** (`ERC-7702` + `ERC-7710`). The agent reasons over markets with **Venice AI**, pays for its own data feeds via **x402** (HTTP 402 + EIP-3009 USDC authorizations), and pays its own gas in **USDC** through the **1Shot Permissionless Relayer**. The user never signs another transaction after the initial delegation.
+DeleGate is the first end-to-end app that lets you grant a **scoped, revocable, time-bounded** on-chain permission to an autonomous AI agent. Pick a preset — `Trader`, `Rebalancer`, `Claimer`, `Subscriber` — set a budget, sign **one** ERC-7710 delegation, walk away.
+
+The agent reasons with **Venice AI**, pays for its own data feeds via **x402** (HTTP 402 + EIP-3009 USDC authorizations), and pays its own gas in **USDC** through the **1Shot Permissionless Relayer**. The EVM — not us, not the agent — enforces your budget. You never sign another transaction.
+
+> **Default demo flow** is the `Trader` preset (USDC↔ETH on Uniswap V3 Base Sepolia) because it produces the most visible on-chain activity. The same delegation primitive powers the other three presets — only the scope and target contracts change.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/thesithunyein/delegate)
 

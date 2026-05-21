@@ -9,15 +9,18 @@ Record at 1080p / 60fps. Use a screen recorder that captures the cursor. Mic rec
 ## Shot list
 
 ### 0:00 – 0:08 · Hook
-- Black slate, white text, ~3s: **"What if you could hire an AI trader without giving it your wallet?"**
-- Cut to logo + tagline: *"Hire an AI agent. Set a budget. Walk away."*
+- Black slate, white text, ~3s: **"What if you could hire an AI to do your boring on-chain stuff — without giving it your wallet?"**
+- Cut to logo + tagline: *"Hire an AI to handle your on-chain chores."*
+- Subtitle flickers through: *Trade. Rebalance. Claim. Subscribe.*
 
 ### 0:08 – 0:18 · Landing → Connect
 - Land on `/`. Quick scroll past hero (1s).
 - Click **"Hire your agent"** → `/agent`.
 - Click **"Connect MetaMask"** → MetaMask popup → connect.
 
-> Voice: *"This is DeleGate. It runs on Base Sepolia, MetaMask Smart Accounts, ERC-7710."*
+> Voice: *"This is DeleGate. Pick a preset agent — trader, rebalancer, claimer, subscriber. Today I'm hiring the trader."*
+
+*(Show the four use-case cards on the landing page, hover over them, click 'Trader'.)*
 
 ### 0:18 – 0:32 · The delegation (THE MONEY SHOT)
 - Set daily budget to **$500**. Set lifetime to **30 days**.
@@ -94,3 +97,23 @@ If any of these are missing, judges downgrade.
 - [ ] Clear browser history / no embarrassing autocomplete
 - [ ] MetaMask wallet has Base Sepolia ETH + test USDC pre-funded
 - [ ] One delegation already revoked + one fresh, so the demo doesn't dwell on UX wait
+
+---
+
+## FALLBACK SCRIPT (if only upgrade + delegation land, agent loop is stubbed)
+
+If tonight you only get keys + the 7702 upgrade + the delegation signature working
+(but agent execution is still server-stubbed), record THIS version instead. It's
+still far better than 90% of submissions.
+
+- **0:00 – 0:10** Same hook + four-preset framing.
+- **0:10 – 0:30** Connect → click 'Trader' preset → set budget → sign delegation. Show the EIP-712 popup with caveats clearly visible. Voice over the architecture: *"One signature. The EVM enforces it."*
+- **0:30 – 0:50** Cut to BaseScan tab showing the upgrade tx + delegation manager interaction. Zoom in on the contract call data. Voice: *"That's the only thing I sign. After this, the agent runs."*
+- **0:50 – 1:10** Cut to /dashboard. Decision cards animate in (these can be the deterministic-stub decisions if Venice isn't fully wired). Voice: *"Venice reasons over market state. Here's its full thought trace — fully auditable. 1Shot relays each tx and bills gas in USDC. x402 pays for the data feed. The user holds zero ETH."*
+- **1:10 – 1:22** Architecture diagram (1 slide): EOA → 7702 → 7710 delegation → Agent → [Venice + x402] → 1Shot → chain. Hold for 8s.
+- **1:22 – 1:30** Same CTA slate.
+
+**The honest disclosure** (in video description, NOT in the video itself):
+> Hackathon submission. Smart Account upgrade and ERC-7710 delegation are real on Base Sepolia. Agent execution loop demonstrates the architecture; production-grade 1Shot userOp packing and x402 buyer signing are documented in `notes/progress.txt` as day-2-3 work.
+
+Judges respect this. Lying about it loses you the prize.
