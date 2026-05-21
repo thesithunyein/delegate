@@ -1,22 +1,27 @@
 "use client";
 
 /**
- * MetaMask Smart Accounts (Delegation Toolkit) integration.
+ * MetaMask Smart Accounts Kit integration.
+ *
+ * Uses `@metamask/smart-accounts-kit` (the current name; was renamed from
+ * `@metamask/delegation-toolkit` in Nov 2025 with the 1.x release).
  *
  * Flow:
  *   1. User signs in with EOA via wagmi (MetaMask / injected / WC).
- *   2. We upgrade their EOA → Smart Account via ERC-7702 authorization.
+ *   2. We construct a Stateless7702 MetaMask Smart Account *at the EOA's
+ *      address* (no separate contract address — ERC-7702 upgrades the EOA
+ *      itself). The on-chain authorization tx is deferred until first
+ *      redemption so the user only signs once today.
  *   3. User signs an ERC-7710 Delegation granting the agent scoped power
  *      (e.g. "spend ≤ $500/day on Uniswap router only, USDC↔ETH only").
  *   4. Agent redeems the delegation in a UserOperation, relayed and gas-paid
- *      in USDC by the 1Shot permissionless relayer.
+ *      in USDC by the 1Shot permissionless relayer. The 7702 authorization
+ *      can be batched with the redemption tx.
  *
  * The toolkit ships caveat enforcers we compose:
  *   - allowedTargets   → restrict to Uniswap router + USDC + WETH
- *   - allowedMethods   → restrict to swap selectors + ERC20 approve
- *   - erc20Period      → cap USDC outflow per epoch
+ *   - erc20PeriodTransfer scope → cap USDC outflow per epoch
  *   - timestamp        → bound delegation lifetime
- *   - nonce            → revocable
  */
 
 import {
@@ -24,7 +29,7 @@ import {
   Implementation,
   createDelegation,
   type Delegation,
-} from "@metamask/delegation-toolkit";
+} from "@metamask/smart-accounts-kit";
 import {
   http,
   createPublicClient,
@@ -40,18 +45,23 @@ export const publicClient = createPublicClient({
   transport: http(RPC_URL),
 });
 
-/** Build (and cache) the user's Hybrid Smart Account from their EOA signer. */
+/**
+ * Build the user's Stateless7702 MetaMask Smart Account at their EOA address.
+ *
+ * Per the Smart Accounts Kit EIP-7702 quickstart, `Stateless7702` upgrades
+ * the existing EOA in place rather than deploying a fresh contract account.
+ * The smart account address equals the EOA address — same on BaseScan,
+ * same in MetaMask, same everywhere. This is the literal interpretation of
+ * our "your same address upgrades" pitch.
+ */
 export async function getUserSmartAccount(params: {
   owner: Address;
   walletClient: WalletClient;
 }) {
   const smartAccount = await toMetaMaskSmartAccount({
-    // Cast: viem's Block.transactions union widened in 2.22 vs what the
-    // delegation-toolkit's generic constraint pins to. Runtime is identical.
-    client: publicClient as unknown as Parameters<typeof toMetaMaskSmartAccount>[0]["client"],
-    implementation: Implementation.Hybrid,
-    deployParams: [params.owner, [], [], []],
-    deploySalt: "0x0000000000000000000000000000000000000000000000000000000000000000",
+    client: publicClient,
+    implementation: Implementation.Stateless7702,
+    address: params.owner,
     signer: { walletClient: params.walletClient },
   });
   return smartAccount;

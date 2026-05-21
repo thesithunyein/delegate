@@ -77,7 +77,7 @@ export async function POST(req: Request) {
 }
 
 async function buildRealUserOp(_req: ExecuteRequest): Promise<OneShotUserOpRequest["userOp"]> {
-  // Implemented in Day 9: import the kernel ABI from @metamask/delegation-toolkit
+  // Implemented in Day 9: import the kernel ABI from @metamask/smart-accounts-kit
   // and call account.encodeRedeemDelegations(...). Stub stays here so the
   // route file compiles without the deployed kernel.
   throw new Error("Real userOp builder pending — see notes/day9-kernel.md");

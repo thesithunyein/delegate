@@ -51,7 +51,7 @@ This is not a chatbot stapled to a wallet. The AI is the agent's brain, and the 
 
 Integration lives in `src/lib/smart-account.ts` and is the **main flow** of the application:
 
-1. On `/agent`, the user connects MetaMask and we instantiate a Hybrid Smart Account from their EOA via `toMetaMaskSmartAccount()` from `@metamask/delegation-toolkit`. This upgrades the user's address to a Smart Account using `ERC-7702` authorization.
+1. On `/agent`, the user connects MetaMask and we instantiate a `Stateless7702` MetaMask Smart Account at the user's existing EOA address via `toMetaMaskSmartAccount()` from `@metamask/smart-accounts-kit` (the current name; was renamed from `@metamask/delegation-toolkit` with the 1.x release). The smart account address **equals** the EOA address — ERC-7702 upgrades the EOA in place, not a separate contract.
 2. We compose an `ERC-7710` delegation using:
    - **`erc20PeriodTransfer` scope** — periodic USDC spend cap (the daily budget).
    - **`allowedTargets` caveat** — only USDC, WETH, and Uniswap V3 SwapRouter02 are callable.

@@ -120,9 +120,9 @@ DeleGate uses three caveats by default:
 
 | Caveat | Source | What it enforces |
 |---|---|---|
-| `erc20PeriodTransfer` | DTK builtin | Periodic USDC spend cap (the daily budget). |
-| `allowedTargets` | DTK builtin | Only USDC, WETH, Uniswap router are callable. |
-| `timestamp` | DTK builtin | Delegation auto-expires after the chosen lifetime. |
+| `erc20PeriodTransfer` | kit builtin | Periodic USDC spend cap (the daily budget). |
+| `allowedTargets` | kit builtin | Only USDC, WETH, Uniswap router are callable. |
+| `timestamp` | kit builtin | Delegation auto-expires after the chosen lifetime. |
 
 This composition is **the entire trust model** of the application. Read it,
 believe it, ship it.
@@ -231,7 +231,7 @@ is no "the agent can rugpull me" failure mode reachable in this design.
 
 | Layer | Status | Notes |
 |---|---|---|
-| 7702 EOA upgrade via toMetaMaskSmartAccount | **Real** | DTK does the heavy lifting. |
+| 7702 EOA upgrade via `toMetaMaskSmartAccount` (Stateless7702) | **Real** | `@metamask/smart-accounts-kit@^1.1.0` does the heavy lifting. Smart account address equals user's EOA — same address, programmable behavior. |
 | 7710 delegation construction + signature | **Real** | Builds typed data with three caveats; signs via wallet. |
 | Venice AI reasoning | **Real** | OpenAI-compatible, JSON-only prompt, confidence gating. |
 | x402 seller demo | **Real** | Returns 402 + EIP-3009 challenge; serves data on payment. |
