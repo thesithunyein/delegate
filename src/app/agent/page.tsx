@@ -1,8 +1,6 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAccount, useWalletClient } from "wagmi";
 import { Navbar } from "@/components/navbar";
@@ -107,6 +105,16 @@ function parsePreset(raw: string | null): PresetKey {
 }
 
 export default function AgentPage() {
+  // useSearchParams must be inside a Suspense boundary in client components
+  // for Next.js 14 static export to succeed.
+  return (
+    <Suspense fallback={null}>
+      <AgentInner />
+    </Suspense>
+  );
+}
+
+function AgentInner() {
   const { address, isConnected } = useAccount();
   const { data: walletClient } = useWalletClient();
   const session = useSession();
