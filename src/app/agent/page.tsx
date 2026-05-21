@@ -142,20 +142,34 @@ function AgentInner() {
       toast.error("Connect MetaMask first");
       return;
     }
-    if (wrongChain) {
-      try {
-        toast.info("Switching to Base Sepolia…");
-        await switchChainAsync({ chainId: baseSepolia.id });
-      } catch {
-        toast.error("Please switch your wallet to Base Sepolia");
-        return;
-      }
+    // Always attempt the chain switch — useChainId can be stale, and wagmi
+    // treats switchChain as idempotent (no-op if already on target).
+    try {
+      toast.info("Ensuring Base Sepolia…");
+      await switchChainAsync({ chainId: baseSepolia.id });
+    } catch {
+      toast.error(
+        "Please switch your wallet to Base Sepolia (chain 84532), then click Sign delegation again.",
+      );
+      return;
     }
     // Imperative fetch bypasses the useWalletClient hook hydration race that
     // happens right after a chain switch.
-    const walletClient = await getWalletClient(wagmiConfig, {
-      chainId: baseSepolia.id,
-    });
+    let walletClient;
+    try {
+      walletClient = await getWalletClient(wagmiConfig, {
+        chainId: baseSepolia.id,
+      });
+    } catch (err) {
+      const msg = String(err);
+      if (/chain/i.test(msg) || /ConnectorChainMismatch/i.test(msg)) {
+        toast.error(
+          "Wallet is reporting the wrong chain. Open MetaMask, manually switch to Base Sepolia, then click Sign delegation again.",
+        );
+        return;
+      }
+      throw err;
+    }
     if (!walletClient) {
       toast.error("Could not get a wallet client. Reconnect MetaMask and retry.");
       return;
