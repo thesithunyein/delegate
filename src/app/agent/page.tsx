@@ -1,6 +1,9 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAccount, useWalletClient } from "wagmi";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
@@ -21,17 +24,98 @@ import {
 import { useSession } from "@/lib/store";
 import { shortAddr } from "@/lib/utils";
 import { CHAIN, EXPLORER_URL } from "@/lib/constants";
-import { Bot, Check, Loader2, ShieldCheck, Sparkles } from "lucide-react";
+import {
+  Bot,
+  Check,
+  Loader2,
+  ShieldCheck,
+  Sparkles,
+  TrendingUp,
+  Scale,
+  Gift,
+  Repeat,
+} from "lucide-react";
 import { toast } from "sonner";
 import type { Address } from "viem";
+
+type PresetKey = "trader" | "rebalancer" | "claimer" | "subscriber";
+
+const PRESETS: Record<
+  PresetKey,
+  {
+    title: string;
+    blurb: string;
+    dailyUsdc: number;
+    durationDays: number;
+    targets: string[];
+    icon: React.ReactNode;
+  }
+> = {
+  trader: {
+    title: "Trader agent",
+    blurb: "Scalps small mean-reversion edges on USDC↔ETH. Hard-capped daily.",
+    dailyUsdc: 500,
+    durationDays: 30,
+    targets: [
+      "USDC (ERC-20 approve, transfer)",
+      "WETH (wrap / unwrap)",
+      "Uniswap V3 SwapRouter02 (exactInputSingle)",
+    ],
+    icon: <TrendingUp className="size-4" />,
+  },
+  rebalancer: {
+    title: "Rebalancer agent",
+    blurb: "Keeps your USDC/WETH split at target weights. Triggers on > 5% drift.",
+    dailyUsdc: 200,
+    durationDays: 90,
+    targets: [
+      "USDC (ERC-20 transfer)",
+      "WETH (wrap / unwrap)",
+      "Uniswap V3 SwapRouter02 (exactInputSingle)",
+    ],
+    icon: <Scale className="size-4" />,
+  },
+  claimer: {
+    title: "Claimer agent",
+    blurb: "Watches airdrop & yield contracts; claims the moment they unlock.",
+    dailyUsdc: 20,
+    durationDays: 90,
+    targets: [
+      "Airdrop distributors (claim)",
+      "Staking rewards (harvest)",
+      "USDC (transfer back to you)",
+    ],
+    icon: <Gift className="size-4" />,
+  },
+  subscriber: {
+    title: "Subscriber agent",
+    blurb: "Pays your on-chain subscriptions monthly. Cancels if balance < threshold.",
+    dailyUsdc: 15,
+    durationDays: 30,
+    targets: [
+      "USDC (ERC-20 transfer to allowlisted billers)",
+    ],
+    icon: <Repeat className="size-4" />,
+  },
+};
+
+function parsePreset(raw: string | null): PresetKey {
+  if (raw === "rebalancer" || raw === "claimer" || raw === "subscriber") {
+    return raw;
+  }
+  return "trader";
+}
 
 export default function AgentPage() {
   const { address, isConnected } = useAccount();
   const { data: walletClient } = useWalletClient();
   const session = useSession();
+  const searchParams = useSearchParams();
+  const presetKey = parsePreset(searchParams.get("preset"));
+  const preset = PRESETS[presetKey];
 
-  const [dailyUsdc, setDailyUsdc] = useState(500);
-  const [durationDays, setDurationDays] = useState(30);
+  const [dailyUsdc, setDailyUsdc] = useState(preset.dailyUsdc);
+  const [durationDays, setDurationDays] = useState(preset.durationDays);
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState<"idle" | "upgrade" | "delegate" | "done">(
     session.delegation ? "done" : "idle",
@@ -76,6 +160,13 @@ export default function AgentPage() {
       <Navbar />
       <main className="container max-w-3xl py-12">
         <div className="mb-8">
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1 text-xs text-muted-foreground">
+            <span className="inline-flex size-5 items-center justify-center rounded-md bg-secondary text-foreground">
+              {preset.icon}
+            </span>
+            <span className="font-medium text-foreground">{preset.title}</span>
+            <span className="hidden sm:inline">· {preset.blurb}</span>
+          </div>
           <h1 className="text-3xl font-semibold tracking-tight">Hire your agent</h1>
           <p className="mt-2 text-muted-foreground">
             One signature delegates scoped, time-bounded spending power. The
@@ -139,9 +230,9 @@ export default function AgentPage() {
                 <div className="rounded-lg border border-border bg-secondary/40 p-4 text-sm">
                   <p className="font-medium">Allowed targets</p>
                   <ul className="mt-2 space-y-1 font-mono text-xs text-muted-foreground">
-                    <li>· USDC (ERC-20 approve, transfer)</li>
-                    <li>· WETH (wrap / unwrap)</li>
-                    <li>· Uniswap V3 SwapRouter02 (exactInputSingle)</li>
+                    {preset.targets.map((t) => (
+                      <li key={t}>· {t}</li>
+                    ))}
                   </ul>
                 </div>
                 <div className="rounded-lg border border-border bg-secondary/40 p-4 text-sm">

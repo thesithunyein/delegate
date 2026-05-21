@@ -13,6 +13,7 @@ import {
 import { useSession, type AgentDecision } from "@/lib/store";
 import { shortAddr, timeAgo } from "@/lib/utils";
 import { EXPLORER_URL } from "@/lib/constants";
+import { previewDecision, previewTxHash } from "@/lib/preview";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -21,13 +22,15 @@ import {
   Pause,
   Play,
   Brain,
+  Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function DashboardPage() {
   const session = useSession();
-  const [running, setRunning] = useState(false);
+  const isPreview = !session.delegation;
+  const [running, setRunning] = useState(isPreview); // auto-run in preview mode
   const [thinking, setThinking] = useState(false);
 
   const remaining = useMemo(() => {
@@ -37,16 +40,34 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!running) return;
-    const id = setInterval(() => void tick(), 7_000);
+    const intervalMs = isPreview ? 4_000 : 7_000;
+    const id = setInterval(() => void tick(), intervalMs);
     void tick();
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [running]);
+  }, [running, isPreview]);
 
   async function tick() {
-    if (!session.delegation) {
-      toast.error("No delegation found. Hire an agent first.");
-      setRunning(false);
+    // Preview mode: client-only synthetic decisions, no network, instant.
+    if (isPreview) {
+      setThinking(true);
+      // Simulate "thinking" latency so the indicator visibly pulses.
+      await new Promise((r) => setTimeout(r, 600 + Math.random() * 600));
+      const p = previewDecision(remaining);
+      const decision: AgentDecision = {
+        id: crypto.randomUUID(),
+        ts: Date.now(),
+        decision: p.decision,
+        amountUsdc: p.amountUsdc,
+        rationale: p.rationale,
+        confidence: p.confidence,
+        marketPrice: p.marketPrice,
+        txStatus: p.decision === "hold" ? "skipped" : "included",
+        txHash: p.decision === "hold" ? undefined : previewTxHash(),
+        feeChargedUsdc: p.decision === "hold" ? undefined : (0.012 + Math.random() * 0.01).toFixed(4),
+      };
+      session.appendDecision(decision);
+      setThinking(false);
       return;
     }
     setThinking(true);
@@ -138,6 +159,24 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {isPreview && (
+          <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-400/30 bg-amber-400/5 p-4 text-sm">
+            <Eye className="mt-0.5 size-4 flex-none text-amber-400" />
+            <div className="flex-1">
+              <p className="font-medium text-amber-300">Preview mode</p>
+              <p className="mt-0.5 text-amber-100/70">
+                Showing a synthetic agent loop so you can see how DeleGate
+                works without setup. Decisions, prices, and transaction hashes
+                below are simulated for the demo.{" "}
+                <a href="/agent" className="underline underline-offset-4 hover:text-amber-300">
+                  Hire a real agent
+                </a>{" "}
+                to run against Base Sepolia with Venice AI + 1Shot.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="grid gap-6 lg:grid-cols-3">
           <Stat
             label="Today's budget remaining"
@@ -179,9 +218,9 @@ export default function DashboardPage() {
             <CardContent className="px-0">
               {session.decisions.length === 0 ? (
                 <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
-                  <Bot className="size-8 text-muted-foreground" />
+                  <Bot className="size-8 animate-pulse text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">
-                    No decisions yet. {session.delegation ? "Press Start." : "Sign a delegation first."}
+                    {isPreview ? "Warming up the preview agent…" : session.delegation ? "Press Start." : "Sign a delegation first."}
                   </p>
                 </div>
               ) : (
@@ -276,6 +315,17 @@ function TxLink({ d }: { d: AgentDecision }) {
   if (d.txStatus === "failed")
     return <span className="text-rose-400">failed</span>;
   if (!d.txHash) return null;
+  // Preview hashes start with 0xpre and are non-clickable (no real chain entry).
+  if (d.txHash.startsWith("0xpre")) {
+    return (
+      <span
+        title="Preview transaction — hire a real agent to see live BaseScan links"
+        className="inline-flex cursor-help items-center gap-1 text-muted-foreground"
+      >
+        tx (preview)
+      </span>
+    );
+  }
   return (
     <a
       href={`${EXPLORER_URL}/tx/${d.txHash}`}

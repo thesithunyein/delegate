@@ -64,24 +64,28 @@ export default function Home() {
               </p>
               <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
                 <UseCase
+                  href="/agent?preset=trader"
                   icon={<TrendingUp className="size-4" />}
                   title="Trader"
                   budget="≤ $500/day"
                   desc="Watches RSI, swaps USDC↔ETH on Uniswap when signals fire."
                 />
                 <UseCase
+                  href="/agent?preset=rebalancer"
                   icon={<Scale className="size-4" />}
                   title="Rebalancer"
                   budget="60/40 target"
                   desc="Keeps your portfolio at target weights. Triggers on drift > 5%."
                 />
                 <UseCase
+                  href="/agent?preset=claimer"
                   icon={<Gift className="size-4" />}
                   title="Claimer"
                   budget="≤ $20/wk gas"
                   desc="Claims airdrops & yields the moment they unlock. You keep sleeping."
                 />
                 <UseCase
+                  href="/agent?preset=subscriber"
                   icon={<Repeat className="size-4" />}
                   title="Subscriber"
                   budget="$15/mo cap"
@@ -222,11 +226,13 @@ function Pillar({
 }
 
 function UseCase({
+  href,
   icon,
   title,
   budget,
   desc,
 }: {
+  href: string;
   icon: React.ReactNode;
   title: string;
   budget: string;
@@ -234,7 +240,7 @@ function UseCase({
 }) {
   return (
     <Link
-      href="/agent"
+      href={href}
       className="group rounded-xl border border-border bg-card/60 p-5 text-left transition-colors hover:border-foreground/40 hover:bg-card"
     >
       <div className="flex items-center justify-between">
