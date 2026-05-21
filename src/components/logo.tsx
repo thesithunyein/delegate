@@ -23,15 +23,15 @@ export function LogoMark({
       className={cn("flex-none", className)}
       aria-hidden
     >
-      <rect width="32" height="32" rx="7" fill="currentColor" />
+      <rect width="32" height="32" rx="7" fill="#0A0E1A" />
       <path
         d="M9.5 8.5h6.75a7.5 7.5 0 0 1 0 15H9.5v-15z"
-        stroke="white"
+        stroke="#FAFAFA"
         strokeWidth="2.4"
         strokeLinejoin="round"
-        className="opacity-95"
+        opacity="0.95"
       />
-      <circle cx="20" cy="16" r="2.2" className="fill-emerald-400" />
+      <circle cx="20" cy="16" r="2.2" fill="#10B981" />
     </svg>
   );
 }
