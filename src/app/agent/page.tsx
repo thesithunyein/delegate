@@ -2,7 +2,8 @@
 
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useAccount, useWalletClient } from "wagmi";
+import { useAccount, useChainId, useSwitchChain, useWalletClient } from "wagmi";
+import { baseSepolia } from "wagmi/chains";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import {
@@ -116,7 +117,10 @@ export default function AgentPage() {
 
 function AgentInner() {
   const { address, isConnected } = useAccount();
+  const chainId = useChainId();
+  const { switchChainAsync } = useSwitchChain();
   const { data: walletClient } = useWalletClient();
+  const wrongChain = isConnected && chainId !== baseSepolia.id;
   const session = useSession();
   const searchParams = useSearchParams();
   const presetKey = parsePreset(searchParams.get("preset"));
@@ -133,8 +137,21 @@ function AgentInner() {
     "0x000000000000000000000000000000000000bEEF") as Address;
 
   async function handleDelegate() {
-    if (!isConnected || !address || !walletClient) {
+    if (!isConnected || !address) {
       toast.error("Connect MetaMask first");
+      return;
+    }
+    if (wrongChain) {
+      try {
+        toast.info("Switching to Base Sepolia…");
+        await switchChainAsync({ chainId: baseSepolia.id });
+      } catch {
+        toast.error("Please switch your wallet to Base Sepolia");
+        return;
+      }
+    }
+    if (!walletClient) {
+      toast.error("Wallet client not ready. Try again in a second.");
       return;
     }
     setBusy(true);
@@ -264,7 +281,9 @@ function AgentInner() {
                       ? step === "upgrade"
                         ? "Building Smart Account…"
                         : "Awaiting signature…"
-                      : "Sign delegation"}
+                      : wrongChain
+                        ? "Switch to Base Sepolia"
+                        : "Sign delegation"}
                 </Button>
                 {step === "done" && session.delegation && (
                   <DoneCard
