@@ -2,8 +2,10 @@
 
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useAccount, useChainId, useSwitchChain, useWalletClient } from "wagmi";
+import { useAccount, useChainId, useSwitchChain } from "wagmi";
+import { getWalletClient } from "wagmi/actions";
 import { baseSepolia } from "wagmi/chains";
+import { wagmiConfig } from "@/lib/wagmi";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import {
@@ -119,7 +121,6 @@ function AgentInner() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const { switchChainAsync } = useSwitchChain();
-  const { data: walletClient } = useWalletClient();
   const wrongChain = isConnected && chainId !== baseSepolia.id;
   const session = useSession();
   const searchParams = useSearchParams();
@@ -150,8 +151,13 @@ function AgentInner() {
         return;
       }
     }
+    // Imperative fetch bypasses the useWalletClient hook hydration race that
+    // happens right after a chain switch.
+    const walletClient = await getWalletClient(wagmiConfig, {
+      chainId: baseSepolia.id,
+    });
     if (!walletClient) {
-      toast.error("Wallet client not ready. Try again in a second.");
+      toast.error("Could not get a wallet client. Reconnect MetaMask and retry.");
       return;
     }
     setBusy(true);
