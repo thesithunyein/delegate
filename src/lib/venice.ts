@@ -3,11 +3,16 @@
  *
  * Server-only — never import this from a client component. The API key is
  * held in process.env.VENICE_API_KEY and proxied through /api/agent/think.
+ *
+ * Provider override: if `VENICE_BASE_URL` is set, it points the client at
+ * any other OpenAI-compatible endpoint (Groq, Together, OpenRouter, etc).
+ * The system prompt and JSON contract are identical across providers, so
+ * the demo flow is provider-agnostic. Default = Venice.
  */
 
 import "server-only";
 
-const VENICE_BASE = "https://api.venice.ai/api/v1";
+const DEFAULT_VENICE_BASE = "https://api.venice.ai/api/v1";
 
 export interface VeniceMessage {
   role: "system" | "user" | "assistant";
@@ -33,12 +38,14 @@ export async function veniceComplete(
   const apiKey = process.env.VENICE_API_KEY;
   if (!apiKey) {
     throw new Error(
-      "VENICE_API_KEY missing. Set it in .env.local. Get one at https://venice.ai.",
+      "VENICE_API_KEY missing. Set it in .env.local. Get one at https://venice.ai (or point VENICE_BASE_URL at any OpenAI-compatible provider).",
     );
   }
+  const baseUrl = process.env.VENICE_BASE_URL ?? DEFAULT_VENICE_BASE;
   const model = params.model ?? process.env.VENICE_MODEL ?? "llama-3.3-70b";
+  const isVenice = baseUrl.includes("venice.ai");
 
-  const res = await fetch(`${VENICE_BASE}/chat/completions`, {
+  const res = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
@@ -49,14 +56,17 @@ export async function veniceComplete(
       messages: params.messages,
       temperature: params.temperature ?? 0.4,
       max_tokens: params.maxTokens ?? 600,
-      venice_parameters: { include_venice_system_prompt: false },
+      // Venice-specific param; harmless on other providers (they ignore unknown fields).
+      ...(isVenice
+        ? { venice_parameters: { include_venice_system_prompt: false } }
+        : {}),
     }),
     cache: "no-store",
   });
 
   if (!res.ok) {
     const errBody = await res.text();
-    throw new Error(`Venice ${res.status}: ${errBody.slice(0, 200)}`);
+    throw new Error(`LLM ${res.status} (${baseUrl}): ${errBody.slice(0, 200)}`);
   }
 
   const json = (await res.json()) as {
