@@ -27,7 +27,7 @@ export default function Home() {
             <div className="mx-auto max-w-3xl text-center">
               <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1 text-xs text-muted-foreground backdrop-blur">
                 <span className="size-1.5 animate-pulse rounded-full bg-emerald-400" />
-                Live on Base Sepolia · MetaMask Smart Accounts · ERC-7710
+                Live on Base · MetaMask Smart Accounts Kit · ERC-7702 / 7710 / 7715
               </div>
               <h1 className="text-balance text-5xl font-semibold tracking-tight md:text-7xl">
                 {APP_TAGLINE}

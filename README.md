@@ -14,6 +14,26 @@ The agent reasons with **Venice AI**, pays for its own data feeds via **x402** (
 
 ---
 
+## Hackathon track coverage at a glance
+
+DeleGate is engineered to **stack prizes** across the MetaMask Smart Accounts
+Kit × 1Shot × Venice AI Dev Cook-Off. Every track's qualification requirement
+maps to a real code path:
+
+| Prize track | $ | Qualifying primitive in DeleGate |
+|---|---|---|
+| **Best x402 + ERC-7710** | $3,000 | `payingFetch()` in `src/lib/x402.ts` lets the agent pay the seller per data call; the same delegation that lets the agent trade is what the buyer presents to settle the 402. |
+| **Best Agent** | $3,000 | Full reasoning → policy guard → on-chain redemption loop, never user-in-the-middle after the single delegation. |
+| **Best A2A Coordination** | $3,000 | `src/lib/redelegation.ts` — user signs **one** root delegation; a Coordinator smart account fans out narrower redelegations to specialized Trader / Claimer / Subscriber sub-agents. Revoking the root cascades. |
+| **Best Use of Venice AI** | $3,000 | Venice is the agent's only brain; full chain-of-thought rendered live; confidence-gated server-side so the AI is never trusted with budget. |
+| **Best 1Shot Permissionless Relayer** | $1,000 USDC | Mainnet config supported via env; 7702 authorization batched with the first userOp through 1Shot so account upgrade and first action ship in one sponsored tx. |
+| **Best Social Media** | $500 | Three `@MetaMaskDev`-tagged threads in `notes/x-threads.md` document the build journey and showcase the Advanced Permissions UX. |
+| **Best Feedback** | $500 | Three reproducible, constructive doc-improvement issues in `notes/feedback.md`, filed against MetaMask, 1Shot, and Venice repos. |
+
+**Track-by-track line-by-line proof:** see `notes/track-coverage.md`.
+
+---
+
 ## Why this matters
 
 Agentic apps today force a brutal trade-off:
