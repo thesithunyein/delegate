@@ -25,6 +25,12 @@ export function Navbar() {
             Agent
           </Link>
           <Link
+            href="/a2a"
+            className="rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground"
+          >
+            A2A
+          </Link>
+          <Link
             href="https://github.com/thesithunyein/delegate"
             target="_blank"
             className="rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground"

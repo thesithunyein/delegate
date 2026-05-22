@@ -17,6 +17,7 @@ export interface AgentDecision {
   txHash?: Hex;
   userOpHash?: Hex;
   feeChargedUsdc?: string;
+  paidViaX402?: boolean;
 }
 
 export interface SessionState {

@@ -23,6 +23,7 @@ import {
   Play,
   Brain,
   Eye,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -212,7 +213,7 @@ export default function DashboardPage() {
                 )}
               </CardTitle>
               <CardDescription>
-                Every Venice AI decision the agent makes, plus its on-chain settlement.
+                Every Venice AI decision the agent makes, plus its on-chain settlement. ⚡ = data paid via x402.
               </CardDescription>
             </CardHeader>
             <CardContent className="px-0">
@@ -243,6 +244,14 @@ export default function DashboardPage() {
                             </span>
                           </div>
                           <div className="flex items-center gap-3 text-xs">
+                            {d.paidViaX402 && (
+                              <span
+                                title="Market data fetched via x402 micropayment (EIP-3009)"
+                                className="inline-flex cursor-help items-center gap-0.5 rounded bg-violet-500/10 px-1.5 py-0.5 font-mono font-medium text-violet-400"
+                              >
+                                <Zap className="size-2.5" /> x402
+                              </span>
+                            )}
                             <span className="text-muted-foreground">
                               conf {(d.confidence * 100).toFixed(0)}%
                             </span>
