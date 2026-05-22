@@ -321,16 +321,7 @@ function DoneCard({
         <Check className="size-4" /> Delegation signed
       </div>
       <div className="mb-3 grid gap-1 font-mono text-xs text-muted-foreground">
-        <span>Smart Account:&nbsp;
-          <a
-            className="text-foreground underline-offset-4 hover:underline"
-            href={`${EXPLORER_URL}/address/${smart}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            {shortAddr(smart, 8)}
-          </a>
-        </span>
+        <span>Session key: {shortAddr(smart, 8)}</span>
         <span>Signed at: {new Date(signedAt).toLocaleString()}</span>
       </div>
       <a
