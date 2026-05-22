@@ -68,7 +68,8 @@ export const useSession = create<SessionState>()(
           ),
         }),
 
-      resetDay: () => set({ spentTodayUsdc: 0, dayEpoch: todayEpoch() }),
+      resetDay: () =>
+        set({ spentTodayUsdc: 0, dayEpoch: todayEpoch(), decisions: [] }),
 
       reset: () =>
         set({
