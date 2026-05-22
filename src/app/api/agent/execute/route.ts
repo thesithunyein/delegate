@@ -62,8 +62,10 @@ export async function POST(req: Request) {
 
   // ── Demo fallback (clearly labeled) ──
   await new Promise((r) => setTimeout(r, 1200 + Math.random() * 800));
-  const fakeHash = ("0x" +
-    [...crypto.getRandomValues(new Uint8Array(32))]
+  // Prefix with "0xpre" so TxLink renders a non-clickable preview badge
+  // instead of a dead BaseScan link. Real hashes land here once ENABLE_REAL_RELAY=1.
+  const fakeHash = ("0xpre" +
+    [...crypto.getRandomValues(new Uint8Array(29))]
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("")) as Hex;
   return NextResponse.json({
@@ -71,7 +73,7 @@ export async function POST(req: Request) {
     txHash: fakeHash,
     status: "included",
     feeChargedUsdc: (body.amountUsdc * 0.0008).toFixed(4),
-    blockExplorer: `https://sepolia.basescan.org/tx/${fakeHash}`,
+    blockExplorer: null,
     _demoStub: true,
   });
 }
