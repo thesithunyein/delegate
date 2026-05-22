@@ -24,6 +24,7 @@ import {
   Brain,
   Eye,
   Zap,
+  RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -35,7 +36,7 @@ export default function DashboardPage() {
   const [thinking, setThinking] = useState(false);
 
   const remaining = useMemo(() => {
-    const cap = 500; // mirrors the policy default; UI source of truth in real build
+    const cap = 1000; // daily USDC budget cap — matches delegation policy default
     return Math.max(0, cap - session.spentTodayUsdc);
   }, [session.spentTodayUsdc]);
 
@@ -150,6 +151,15 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center gap-2">
             <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { session.resetDay(); toast.success("Day budget reset — agent will trade again"); }}
+              className="gap-2 text-muted-foreground hover:text-foreground"
+              title="Reset today's spent counter (for demo)"
+            >
+              <RotateCcw className="size-3.5" /> Reset day
+            </Button>
+            <Button
               variant={running ? "outline" : "default"}
               onClick={() => setRunning((r) => !r)}
               className="gap-2"
@@ -159,6 +169,25 @@ export default function DashboardPage() {
             </Button>
           </div>
         </div>
+
+        {!isPreview && remaining === 0 && (
+          <div className="mb-6 flex items-start gap-3 rounded-xl border border-rose-400/30 bg-rose-400/5 p-4 text-sm">
+            <RotateCcw className="mt-0.5 size-4 flex-none text-rose-400" />
+            <div className="flex-1">
+              <p className="font-medium text-rose-300">Daily budget exhausted</p>
+              <p className="mt-0.5 text-rose-100/70">
+                The agent has spent its full daily USDC budget and is holding.{" "}
+                <button
+                  onClick={() => { session.resetDay(); toast.success("Budget reset"); }}
+                  className="underline underline-offset-4 hover:text-rose-300"
+                >
+                  Reset the day counter
+                </button>{" "}
+                to let it trade again (demo only — real policy resets at UTC midnight).
+              </p>
+            </div>
+          </div>
+        )}
 
         {isPreview && (
           <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-400/30 bg-amber-400/5 p-4 text-sm">
