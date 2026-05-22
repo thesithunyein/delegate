@@ -69,7 +69,7 @@ export async function POST(req: Request) {
 
   // Hard policy guard — never trust the model with budget.
   const amount = Math.max(0, Math.min(parsed.amountUsdc ?? 0, body.remainingDailyBudget));
-  const decision = parsed.confidence < 0.55 ? "hold" : parsed.decision;
+  const decision = parsed.confidence < 0.42 ? "hold" : parsed.decision;
 
   return NextResponse.json({
     decision,
@@ -182,11 +182,16 @@ async function fetchMarketSnapshot(): Promise<MarketSnapshot> {
 
 function synth(): MarketSnapshot {
   const base = 3450;
-  const wobble = (Math.sin(Date.now() / 60_000) + Math.random() * 0.4 - 0.2) * 30;
+  // Wider swings so the AI sees real momentum signals worth acting on.
+  const trend = Math.sin(Date.now() / 45_000) * 120;
+  const noise = (Math.random() - 0.5) * 160;
+  const wobble = trend + noise;
+  // RSI spans 18-82 so the model sees oversold/overbought extremes regularly.
+  const rsi = 18 + Math.round(Math.abs(Math.sin(Date.now() / 30_000)) * 64 + Math.random() * 18);
   return {
     price: Number((base + wobble).toFixed(2)),
     change24h: Number((wobble / base * 100).toFixed(2)),
-    rsi: 30 + Math.round(Math.random() * 40),
+    rsi: Math.min(82, rsi),
     paidViaX402: false,
   };
 }
