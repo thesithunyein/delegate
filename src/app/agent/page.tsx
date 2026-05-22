@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { resetSessionAccount } from "@/lib/session-account";
 import { useAccount } from "wagmi";
 import { getOrCreateSessionAccount } from "@/lib/session-account";
 import { Navbar } from "@/components/navbar";
@@ -271,6 +272,11 @@ function AgentInner() {
                   <DoneCard
                     smart={session.smartAccountAddress!}
                     signedAt={session.delegation.signedAt}
+                    onReset={() => {
+                      resetSessionAccount();
+                      session.setDelegation(undefined);
+                      setStep("idle");
+                    }}
                   />
                 )}
               </CardFooter>
@@ -300,13 +306,21 @@ function Field({
   );
 }
 
-function DoneCard({ smart, signedAt }: { smart: Address; signedAt: number }) {
+function DoneCard({
+  smart,
+  signedAt,
+  onReset,
+}: {
+  smart: Address;
+  signedAt: number;
+  onReset: () => void;
+}) {
   return (
     <div className="rounded-lg border border-emerald-400/30 bg-emerald-400/5 p-4 text-sm">
       <div className="mb-2 flex items-center gap-2 font-medium text-emerald-400">
         <Check className="size-4" /> Delegation signed
       </div>
-      <div className="grid gap-1 font-mono text-xs text-muted-foreground">
+      <div className="mb-3 grid gap-1 font-mono text-xs text-muted-foreground">
         <span>Smart Account:&nbsp;
           <a
             className="text-foreground underline-offset-4 hover:underline"
@@ -321,10 +335,16 @@ function DoneCard({ smart, signedAt }: { smart: Address; signedAt: number }) {
       </div>
       <a
         href="/dashboard"
-        className="mt-3 inline-flex items-center gap-1 text-sm text-foreground hover:underline"
+        className="flex w-full items-center justify-center gap-2 rounded-md bg-emerald-500 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-400"
       >
-        <Bot className="size-4" /> Open the dashboard
+        <Bot className="size-4" /> Open the dashboard →
       </a>
+      <button
+        onClick={onReset}
+        className="mt-2 w-full text-center text-xs text-muted-foreground hover:text-foreground"
+      >
+        Reset delegation (hire a different agent)
+      </button>
     </div>
   );
 }
