@@ -1,12 +1,11 @@
 "use client";
 
 import { http, createConfig } from "wagmi";
-import { baseSepolia } from "wagmi/chains";
 import { injected, metaMask, walletConnect } from "wagmi/connectors";
-import { RPC_URL, WC_PROJECT_ID, APP_NAME } from "./constants";
+import { CHAIN, RPC_URL, WC_PROJECT_ID, APP_NAME } from "./constants";
 
 export const wagmiConfig = createConfig({
-  chains: [baseSepolia],
+  chains: [CHAIN],
   connectors: [
     metaMask({ dappMetadata: { name: APP_NAME, url: "https://delegate.app" } }),
     injected({ shimDisconnect: true }),
@@ -26,7 +25,7 @@ export const wagmiConfig = createConfig({
       : []),
   ],
   transports: {
-    [baseSepolia.id]: http(RPC_URL),
+    [CHAIN.id]: http(RPC_URL),
   },
   ssr: true,
 });

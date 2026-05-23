@@ -1,12 +1,25 @@
-import { baseSepolia } from "viem/chains";
+import { baseSepolia, sepolia } from "viem/chains";
 
-export const CHAIN = baseSepolia;
+/**
+ * The chain the deployed demo runs on. Defaults to Base Sepolia.
+ * Set NEXT_PUBLIC_CHAIN_ID=11155111 in env to switch to Ethereum Sepolia
+ * (useful when Base faucets are inaccessible — pk910 PoW faucet works on
+ * Sepolia from anywhere with no signup).
+ */
+const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? "84532");
+export const CHAIN = CHAIN_ID === 11155111 ? sepolia : baseSepolia;
 
 export const RPC_URL =
-  process.env.NEXT_PUBLIC_RPC_URL ?? "https://sepolia.base.org";
+  process.env.NEXT_PUBLIC_RPC_URL ??
+  (CHAIN_ID === 11155111
+    ? "https://ethereum-sepolia-rpc.publicnode.com"
+    : "https://sepolia.base.org");
 
 export const EXPLORER_URL =
-  process.env.NEXT_PUBLIC_EXPLORER_URL ?? "https://sepolia.basescan.org";
+  process.env.NEXT_PUBLIC_EXPLORER_URL ??
+  (CHAIN_ID === 11155111
+    ? "https://sepolia.etherscan.io"
+    : "https://sepolia.basescan.org");
 
 export const WC_PROJECT_ID = process.env.NEXT_PUBLIC_WC_PROJECT_ID ?? "";
 
