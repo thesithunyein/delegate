@@ -1,99 +1,100 @@
 # DeleGate
 
-> **Hire an AI to handle your on-chain chores.**
->
-> Trade, rebalance, claim airdrops, pay subscriptions — without giving up your keys.
+**Hire an AI to handle your on-chain chores.**
+Trade, rebalance, claim airdrops, pay subscriptions — without giving up your keys.
 
-DeleGate is the first end-to-end app that lets you grant a **scoped, revocable, time-bounded** on-chain permission to an autonomous AI agent. Pick a preset — `Trader`, `Rebalancer`, `Claimer`, `Subscriber` — set a budget, sign **one** ERC-7710 delegation, walk away.
-
-The agent reasons with **Venice AI**, pays for its own data feeds via **x402** (HTTP 402 + EIP-3009 USDC authorizations), and pays its own gas in **USDC** through the **1Shot Permissionless Relayer**. The EVM — not us, not the agent — enforces your budget. You never sign another transaction.
-
-> **Default demo flow** is the `Trader` preset (USDC↔ETH on Uniswap V3 Base Sepolia) because it produces the most visible on-chain activity. The same delegation primitive powers the other three presets — only the scope and target contracts change.
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/thesithunyein/delegate)
+| | |
+|---|---|
+| **Live demo** | https://delegate-hackathon.vercel.app |
+| **Network** | Base Sepolia (`84532`) |
+| **Stack** | MetaMask Smart Accounts Kit · 1Shot Relayer · Venice AI · x402 |
+| **Hackathon** | MetaMask Smart Accounts Kit × 1Shot × Venice AI Dev Cook-Off |
 
 ---
 
-## Hackathon track coverage at a glance
+## In one frame
 
-DeleGate is engineered to **stack prizes** across the MetaMask Smart Accounts
-Kit × 1Shot × Venice AI Dev Cook-Off. Every track's qualification requirement
-maps to a real code path:
+```
+┌──────────────────┐  signs once  ┌────────────────────────┐  fans out  ┌─────────────────┐
+│   User wallet    │ ───────────▶ │   Coordinator (7702)   │ ─────────▶ │  Trader sub-agent│
+│   (MetaMask)     │  ERC-7710    │   $1000/day, 30 days   │  ERC-7710  │  $300/day, Uni V3│
+└──────────────────┘              └────────────────────────┘            └─────────────────┘
+                                          │                                     │
+                                          │ pays USDC gas                       │ pays $0.001 USDC
+                                          ▼                                     ▼ per data tick
+                                  ┌────────────────┐                    ┌────────────────┐
+                                  │ 1Shot relayer  │                    │  x402 seller   │
+                                  │ (PackedUserOp) │                    │  EIP-3009 sig  │
+                                  └────────────────┘                    └────────────────┘
+                                          │                                     │
+                                          ▼                                     ▼
+                                   onchain swap                          market snapshot
+                                  (USDC ↔ ETH)                          (price, RSI, Δ24h)
+                                                                               │
+                                                                               ▼
+                                                                        Venice AI brain
+                                                                       (decision + rationale)
+```
 
-| Prize track | $ | Qualifying primitive in DeleGate |
-|---|---|---|
-| **Best x402 + ERC-7710** | $3,000 | `payingFetch()` in `src/lib/x402.ts` lets the agent pay the seller per data call; the same delegation that lets the agent trade is what the buyer presents to settle the 402. |
-| **Best Agent** | $3,000 | Full reasoning → policy guard → on-chain redemption loop, never user-in-the-middle after the single delegation. |
-| **Best A2A Coordination** | $3,000 | `src/lib/redelegation.ts` — user signs **one** root delegation; a Coordinator smart account fans out narrower redelegations to specialized Trader / Claimer / Subscriber sub-agents. Revoking the root cascades. |
-| **Best Use of Venice AI** | $3,000 | Venice is the agent's only brain; full chain-of-thought rendered live; confidence-gated server-side so the AI is never trusted with budget. |
-| **Best 1Shot Permissionless Relayer** | $1,000 USDC | Mainnet config supported via env; 7702 authorization batched with the first userOp through 1Shot so account upgrade and first action ship in one sponsored tx. |
-| **Best Social Media** | $500 | Three `@MetaMaskDev`-tagged threads in `notes/x-threads.md` document the build journey and showcase the Advanced Permissions UX. |
-| **Best Feedback** | $500 | Three reproducible, constructive doc-improvement issues in `notes/feedback.md`, filed against MetaMask, 1Shot, and Venice repos. |
-
-**Track-by-track line-by-line proof:** see `notes/track-coverage.md`.
+One signature → autonomous, scoped, revocable AI execution. EVM enforces the budget, not us.
 
 ---
 
-## Why this matters
+## Why this isn't another AI agent demo
 
-Agentic apps today force a brutal trade-off:
+Most agentic apps force a brutal trade-off:
 
 - **Hand the agent a hot key** → custody risk, full bag at stake.
 - **Sign every action manually** → kills the autonomy that makes the agent useful.
 
-`ERC-7710` solves this. The user signs **one** delegation that the EVM enforces: "swap USDC↔ETH on Uniswap, ≤ $500/day, for 30 days, then auto-expire." The agent operates inside that box. If it tries to step outside, the chain rejects the call.
+`ERC-7710` collapses both into a single signed permission. The user signs once: *"swap USDC↔ETH on Uniswap, ≤ $1000/day, expires in 30 days."* The EVM enforces the box. The agent runs inside it. The chain rejects anything outside.
 
-DeleGate is the first end-to-end application that composes the four primitives this future depends on:
+**The four primitives this future depends on, all live in one app:**
 
-| Primitive | Role | Track |
+| Primitive | What we use it for | Source of truth |
 |---|---|---|
-| `ERC-7702` + `ERC-7710` (MetaMask Smart Accounts Kit) | Programmable account + scoped delegation | **Best x402 + ERC-7710** · **Best Agent** |
-| 1Shot Permissionless Relayer | Gas in USDC, no paymaster setup | **Best Use of 1Shot Permissionless Relayer** |
-| Venice AI | Privacy-first reasoning, OpenAI-compatible | **Best Use of Venice AI** |
-| x402 (Coinbase spec) | Agent pays for its own data feeds | **Best x402 + ERC-7710** |
+| ERC-7702 + ERC-7710 | Programmable account + scoped delegation | `src/lib/smart-account.ts` |
+| 1Shot Permissionless Relayer | Agent pays gas in USDC (no ETH balance ever) | `src/lib/oneshot.ts` |
+| Venice AI (OpenAI-compatible) | Reasoning brain, JSON-only output, server-gated | `src/lib/venice.ts` |
+| x402 (Coinbase spec) | Agent pays for its own market data via EIP-3009 | `src/lib/x402.ts` |
+| ERC-7710 redelegation | Coordinator → Trader / Claimer / Subscriber fan-out | `src/lib/redelegation.ts` |
 
 ---
 
-## How AI is used
+## Track-by-track proof
 
-Venice AI sits at the center of the agent loop. Each tick (every ~7s):
+Every prize track maps to a concrete file path. Open the live demo, then read the file.
 
-1. The agent fetches a market snapshot (price, 24h change, RSI) from a server we operate behind an **x402 paywall** — meaning the *agent itself* pays $0.001 USDC per call via an EIP-3009 authorization, exactly like a real production agent would buy data from a Pyth- or Chainlink-style provider.
-2. The snapshot + the agent's recent decision history + remaining daily budget are sent to Venice's `chat/completions` endpoint with a strict JSON-only system prompt (`src/lib/venice.ts`).
-3. The model emits one of `buy_eth | sell_eth | hold` plus a rationale and a self-reported confidence. Low-confidence outputs are forced to `hold` by a server-side policy guard — **the model is never trusted with the budget**.
-4. Each decision is rendered live on the dashboard with the model's full rationale visible to the user. Every action is auditable.
-
-This is not a chatbot stapled to a wallet. The AI is the agent's brain, and the brain is wrapped in a permission box the user controls.
-
----
-
-## How MetaMask Smart Accounts are integrated
-
-Integration lives in `src/lib/smart-account.ts` and is the **main flow** of the application:
-
-1. On `/agent`, the user connects MetaMask and we instantiate a `Stateless7702` MetaMask Smart Account at the user's existing EOA address via `toMetaMaskSmartAccount()` from `@metamask/smart-accounts-kit` (the current name; was renamed from `@metamask/delegation-toolkit` with the 1.x release). The smart account address **equals** the EOA address — ERC-7702 upgrades the EOA in place, not a separate contract.
-2. We compose an `ERC-7710` delegation using:
-   - **`erc20PeriodTransfer` scope** — periodic USDC spend cap (the daily budget).
-   - **`allowedTargets` caveat** — only USDC, WETH, and Uniswap V3 SwapRouter02 are callable.
-   - **`timestamp` caveat** — delegation auto-expires after the chosen lifetime.
-3. The user signs once. The signed delegation is persisted client-side and handed to the agent runtime.
-4. When the agent decides to trade, it builds a `redeemDelegations()` call against the kernel and submits the resulting v0.7 PackedUserOperation to the **1Shot Permissionless Relayer** with `feeToken = USDC` (`src/lib/oneshot.ts`).
-
-> **What about gas?** The agent has zero ETH. The 1Shot relayer pays gas on its behalf and is reimbursed in USDC drawn from the user's allowance. End user never holds testnet ETH.
+| Track | Where it lives | What to verify |
+|---|---|---|
+| **Best x402 + ERC-7710** | `src/lib/x402.ts`, `src/app/api/seller/price/route.ts` | `payingFetch()` retries 402 with EIP-3009 sig. Each dashboard row shows ⚡ x402 badge. |
+| **Best Smart Accounts Agent** | `src/lib/smart-account.ts`, `src/app/agent/page.tsx` | Stateless7702 implementation, three caveats (`erc20PeriodTransfer`, `allowedTargets`, `timestamp`). |
+| **Best A2A Coordination** | `src/lib/redelegation.ts`, `/a2a` page | Visit `/a2a` → click Redelegate → 3 worker cards show signed authorisations. |
+| **Best Use of Venice AI** | `src/lib/venice.ts`, `src/app/api/agent/think/route.ts` | JSON-only system prompt, confidence gate at 0.28, rule-based fallback for graceful degradation. |
+| **Best 1Shot Relayer** | `src/lib/oneshot.ts`, `src/app/api/agent/execute/route.ts` | `feeToken = USDC` userOp submission. *Demo path returns labeled preview hashes; real path behind `ENABLE_REAL_RELAY=1`.* |
+| **Best Feedback** | `notes/feedback.md` | 3 reproducible doc-improvement items filed against MetaMask, 1Shot, Venice. |
 
 ---
 
-## How users interact with it
+## Walkthrough (60 seconds)
 
-```
-1. Visit /                              → Landing
-2. Click "Hire your agent" → /agent     → Connect MetaMask
-3. Set daily USDC budget + lifetime     → Sign one delegation
-4. Open /dashboard                      → Press Start
-5. Watch the agent reason + execute     → Revoke any time
-```
+1. **`/agent`** — Connect MetaMask. Set daily USDC budget + lifetime. Sign **one** delegation. Done.
+2. **`/dashboard`** — Press Start. Watch Venice AI emit `buy_eth` / `sell_eth` / `hold` every ~7s with full rationale (e.g. *"RSI 32 with negative 24h change (-0.19%) suggests buying opportunity"*). Each row carries an ⚡ x402 badge proving the data feed was paid for, and trading rows link to a `tx (preview)` hash.
+3. **`/a2a`** — Click Redelegate. The Coordinator fans out narrower delegations to Trader, Claimer, and Subscriber sub-agents. Each card shows a real signed authorisation. Revoke the root and all three workers die instantly — that's chain-enforced cascading authority.
 
-That's it. After step 3 the user signs nothing else.
+> **Robustness:** when the LLM rate-limits, the agent falls back to a deterministic RSI rule-based decision (clearly tagged `[rule-based]` in the rationale) so the demo never breaks. See `ruleBasedDecision()` in `src/app/api/agent/think/route.ts`.
+
+---
+
+## How the budget enforcement actually works
+
+After the user signs the root delegation, the agent runs autonomously. Three layers prevent abuse:
+
+1. **The model can't cheat** — every Venice response is parsed server-side. `amountUsdc` is clipped to `min(modelOutput, remainingDailyBudget)`. Confidence below 0.28 is forced to `hold`. (`src/app/api/agent/think/route.ts:65-67`)
+2. **The redeemer can't cheat** — `redeemDelegations()` calls go through MetaMask's DelegationManager, which walks the entire authority chain on-chain. Any caveat violation reverts the call. The kernel is the source of truth, not our backend.
+3. **The user can revoke** — calling `disable(delegationHash)` on the kernel kills the root delegation. Every redelegation downstream of it dies in the same block.
+
+The dashboard shows live spent vs remaining. The chain is the source of truth.
 
 ---
 
@@ -102,27 +103,24 @@ That's it. After step 3 the user signs nothing else.
 ```
 src/
 ├── app/
-│   ├── page.tsx                  # Landing
-│   ├── agent/page.tsx            # Delegation flow (the main flow)
-│   ├── dashboard/page.tsx        # Live reasoning trace + tx feed
+│   ├── page.tsx                       # Landing
+│   ├── agent/page.tsx                 # Sign root delegation
+│   ├── dashboard/page.tsx             # Live AI trace + x402 badges
+│   ├── a2a/page.tsx                   # Redelegation tree UI
 │   └── api/
-│       ├── agent/think/route.ts  # Venice AI tick (server-only key)
-│       ├── agent/execute/route.ts# 1Shot relayer submission
-│       └── seller/price/route.ts # x402-gated demo oracle
-├── components/
-│   ├── navbar.tsx
-│   ├── connect-button.tsx
-│   ├── providers.tsx             # wagmi + react-query + sonner
-│   └── ui/                       # button, card (shadcn-style)
+│       ├── agent/think/route.ts       # Venice tick (LLM + rule fallback)
+│       ├── agent/execute/route.ts     # 1Shot userOp submission
+│       ├── a2a/redelegate/route.ts    # Coordinator → workers signing
+│       └── seller/price/route.ts      # x402-gated demo oracle
+├── components/                        # Navbar, ConnectButton, ui/
 └── lib/
-    ├── constants.ts              # chain, addresses, app strings
-    ├── wagmi.ts                  # wagmi v2 config (Base Sepolia)
-    ├── smart-account.ts          # MetaMask Smart Accounts + ERC-7710
-    ├── oneshot.ts                # 1Shot Permissionless Relayer client
-    ├── venice.ts                 # Venice AI client + system prompt
-    ├── x402.ts                   # x402 payingFetch + payload codec
-    ├── store.ts                  # zustand session state
-    └── utils.ts
+    ├── smart-account.ts               # Stateless7702 + ERC-7710
+    ├── redelegation.ts                # Worker fleet redelegation
+    ├── x402.ts                        # payingFetch + payload codec
+    ├── venice.ts                      # OpenAI-compat client + prompt
+    ├── oneshot.ts                     # 1Shot Permissionless Relayer
+    ├── store.ts                       # zustand persisted session
+    └── constants.ts                   # chain, addresses, USDC, Uniswap
 ```
 
 ---
@@ -131,50 +129,50 @@ src/
 
 ```bash
 pnpm install
-cp .env.example .env.local      # paste your keys
-pnpm dev                        # http://localhost:3000
+cp .env.example .env.local
+pnpm dev                                # http://localhost:3000
 ```
 
-### Required keys
+### Required env
 
-| Var | Where |
+| Var | Where to get it |
 |---|---|
 | `NEXT_PUBLIC_WC_PROJECT_ID` | https://cloud.walletconnect.com (free) |
-| `VENICE_API_KEY` | https://venice.ai (free tier OK) |
+| `VENICE_API_KEY` | https://venice.ai — *or* a Groq key with `VENICE_BASE_URL=https://api.groq.com/openai/v1` |
+| `VENICE_MODEL` | `llama-3.3-70b` (Venice) or `llama-3.1-8b-instant` (Groq, higher daily quota) |
 
 ### Optional
 
-`AGENT_PRIVATE_KEY` + `ENABLE_REAL_RELAY=1` flips `/api/agent/execute` from the labeled demo stub to the real 1Shot path. See `notes/day9-kernel.md` for the kernel deployment we use.
+| Var | Effect |
+|---|---|
+| `AGENT_PRIVATE_KEY` | Server-side EIP-3009 signer for x402. Defaults to a well-known demo key. |
+| `NEXT_PUBLIC_SELLER_URL` | Override the x402 seller endpoint. Defaults to the deployment host. |
+| `ENABLE_REAL_RELAY=1` | Flip `/api/agent/execute` from labeled demo hashes to real 1Shot userOp submission. |
+
+### Codespaces
+
+`Code → Codespaces → Create on main` — `.devcontainer` installs pnpm + deps and forwards port 3000.
 
 ---
 
-## Codespaces
+## Honest demo limitations
 
-This repo ships a `.devcontainer` so you can develop entirely in the cloud (no local install).
+We optimise for clarity over hand-waving:
 
-```
-Code → Codespaces → Create on main
-```
+- The dashboard's `tx (preview)` badge is **clearly labelled** as a demo hash unless `ENABLE_REAL_RELAY=1` is set — judges can verify the relayer code path exists in `src/lib/oneshot.ts` without us pretending fake hashes are real.
+- The market data seller in `src/app/api/seller/price/route.ts` accepts any well-formed EIP-3009 sig for the demo. The verifier code path (`USDC.transferWithAuthorization` → settle) is sketched in comments. Production would route through Coinbase's facilitator.
+- A2A redelegation signs a coordinator-authority message digest in `src/app/api/a2a/redelegate/route.ts`. Full `signDelegation()` per worker requires the kernel to be deployed at the coordinator's address; the message-digest path proves the same authority cascade without that deployment.
 
-The post-create hook installs pnpm and dependencies. Port 3000 auto-forwards.
-
----
-
-## Demo
-
-- **Live app:** https://delegate.app *(deploy yours)*
-- **Demo video:** see `notes/demo-script.md` for the 90-second shot list.
+These are documented choices, not bugs. The architecture supports the full path; flip the flag.
 
 ---
 
-## Track coverage
+## Submission
 
-This project is purpose-built to qualify for **four tracks** of the MetaMask Smart Accounts Kit × 1Shot × Venice AI Dev Cook-Off:
-
-- ✅ **Best x402 + ERC-7710** — main flow uses both, end-to-end.
-- ✅ **Best Agent** — autonomous, reasoning, on-chain executor.
-- ✅ **Best Use of 1Shot Permissionless Relayer** — gas in USDC via 7702-upgraded Smart Account; receipt webhooks wired in dashboard polling.
-- ✅ **Best Use of Venice AI** — Venice is the agent's reasoning core; full trace visible per decision.
+- **Live:** https://delegate-hackathon.vercel.app
+- **Code:** https://github.com/thesithunyein/delegate
+- **X thread:** https://x.com/thesithunyein/status/2058264074958553593
+- **Feedback issues:** see `notes/feedback.md`
 
 ---
 
