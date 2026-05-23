@@ -102,7 +102,11 @@ You MUST respond with ONLY a JSON object, no prose, no markdown fence:
   "confidence": number         // 0..1
 }
 
-Rules:
+Decision rules:
   - Never propose amountUsdc > remainingDailyBudget.
-  - Confidence < 0.55 → decision MUST be "hold".
-  - Be decisive, not gambler-y. Prefer hold over weak edges.`;
+  - RSI < 32 with negative 24h change → "buy_eth" with confidence 0.55-0.80.
+  - RSI > 68 with positive 24h change → "sell_eth" with confidence 0.55-0.75.
+  - RSI 40-60 with |change| < 1% → "hold" with confidence 0.50-0.70.
+  - Position size: 2-5% of remainingDailyBudget per trade. Never max out.
+  - Be active when signals are clear. Hold only when truly ambiguous.
+  - Rationale must cite the specific RSI/change number that drove the decision.`;
