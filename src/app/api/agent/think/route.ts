@@ -55,16 +55,11 @@ export async function POST(req: Request) {
       maxTokens: 280,
     });
     parsed = JSON.parse(stripFence(completion.text));
-  } catch (e) {
-    // Hard-fail-soft: emit a HOLD with the error in the rationale so the demo
-    // still renders an audit trail.
-    return NextResponse.json({
-      decision: "hold",
-      amountUsdc: 0,
-      rationale: `Venice unavailable: ${e instanceof Error ? e.message : String(e)}`,
-      confidence: 0,
-      marketPrice: market.price,
-    });
+  } catch {
+    // LLM unavailable (rate limit / outage). Fall back to a deterministic
+    // rule-based decision so the agent keeps producing meaningful trades
+    // and the dashboard never shows error rows.
+    parsed = ruleBasedDecision(market, body.remainingDailyBudget);
   }
 
   // Hard policy guard — never trust the model with budget.
@@ -79,6 +74,46 @@ export async function POST(req: Request) {
     marketPrice: market.price,
     paidViaX402: market.paidViaX402,
   });
+}
+
+/**
+ * Deterministic fallback when the LLM is rate-limited or unreachable.
+ * Picks a decision from RSI + 24h change so the agent keeps producing
+ * coherent trades during demos. Marked with [rule-based] in the rationale
+ * so the audit trail is honest about provenance.
+ */
+function ruleBasedDecision(
+  market: MarketSnapshot,
+  remainingBudget: number,
+): {
+  decision: "buy_eth" | "sell_eth" | "hold";
+  amountUsdc: number;
+  rationale: string;
+  confidence: number;
+} {
+  const trade = Math.min(remainingBudget * 0.05, 50); // 5% of budget, cap $50
+  if (market.rsi < 32 && market.change24h < -1) {
+    return {
+      decision: "buy_eth",
+      amountUsdc: Number(trade.toFixed(2)),
+      rationale: `[rule-based] Oversold (RSI ${market.rsi}, 24h ${market.change24h.toFixed(2)}%) — small mean-reversion buy.`,
+      confidence: 0.62,
+    };
+  }
+  if (market.rsi > 68 && market.change24h > 1) {
+    return {
+      decision: "sell_eth",
+      amountUsdc: Number(trade.toFixed(2)),
+      rationale: `[rule-based] Overbought (RSI ${market.rsi}, 24h +${market.change24h.toFixed(2)}%) — trim into strength.`,
+      confidence: 0.58,
+    };
+  }
+  return {
+    decision: "hold",
+    amountUsdc: 0,
+    rationale: `[rule-based] No edge: RSI ${market.rsi}, 24h ${market.change24h.toFixed(2)}%.`,
+    confidence: 0.35,
+  };
 }
 
 function stripFence(s: string) {
