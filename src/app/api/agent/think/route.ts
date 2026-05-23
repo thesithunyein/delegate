@@ -64,7 +64,7 @@ export async function POST(req: Request) {
 
   // Hard policy guard — never trust the model with budget.
   const amount = Math.max(0, Math.min(parsed.amountUsdc ?? 0, body.remainingDailyBudget));
-  const decision = parsed.confidence < 0.42 ? "hold" : parsed.decision;
+  const decision = parsed.confidence < 0.35 ? "hold" : parsed.decision;
 
   return NextResponse.json({
     decision,
@@ -217,16 +217,28 @@ async function fetchMarketSnapshot(): Promise<MarketSnapshot> {
 
 function synth(): MarketSnapshot {
   const base = 3450;
-  // Wider swings so the AI sees real momentum signals worth acting on.
-  const trend = Math.sin(Date.now() / 45_000) * 120;
-  const noise = (Math.random() - 0.5) * 160;
-  const wobble = trend + noise;
-  // RSI spans 18-82 so the model sees oversold/overbought extremes regularly.
-  const rsi = 18 + Math.round(Math.abs(Math.sin(Date.now() / 30_000)) * 64 + Math.random() * 18);
+  // Inject obvious regimes 60% of the time so the AI sees actionable signals.
+  const r = Math.random();
+  let rsi: number;
+  let change24h: number;
+  if (r < 0.30) {
+    // Oversold regime → should trigger buy
+    rsi = 18 + Math.floor(Math.random() * 12); // 18-29
+    change24h = -(2 + Math.random() * 3); // -2% to -5%
+  } else if (r < 0.60) {
+    // Overbought regime → should trigger sell
+    rsi = 70 + Math.floor(Math.random() * 12); // 70-81
+    change24h = 2 + Math.random() * 3; // +2% to +5%
+  } else {
+    // Neutral regime → should hold
+    rsi = 38 + Math.floor(Math.random() * 25); // 38-62
+    change24h = (Math.random() - 0.5) * 2; // -1% to +1%
+  }
+  const price = base * (1 + change24h / 100) + (Math.random() - 0.5) * 40;
   return {
-    price: Number((base + wobble).toFixed(2)),
-    change24h: Number((wobble / base * 100).toFixed(2)),
-    rsi: Math.min(82, rsi),
+    price: Number(price.toFixed(2)),
+    change24h: Number(change24h.toFixed(2)),
+    rsi,
     paidViaX402: false,
   };
 }
