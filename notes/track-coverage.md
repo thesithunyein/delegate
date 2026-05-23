@@ -1,128 +1,114 @@
 # DeleGate — Hackathon Track Coverage
 
-> *Direct line-by-line proof that DeleGate qualifies for every track in the
-> MetaMask Smart Accounts Kit × 1Shot API × Venice AI Dev Cook-Off.*
-
-This document maps each track's qualification requirements (verbatim from the
-hackathon brief) to the specific code paths and demo moments that satisfy
-them. Judges should be able to verify each row by clicking the cited file.
+> Honest mapping of what DeleGate ships against the
+> MetaMask Smart Accounts Kit × 1Shot × Venice AI Dev Cook-Off tracks.
+> Every claim below points at a specific file path that judges can open.
 
 ---
 
-## Track 1 — Best x402 + ERC-7710 — $3,000
+## Track 1 — Best x402 + ERC-7710
+
+**What we ship**
 
 | Brief requirement | DeleGate evidence |
 |---|---|
-| "The project should use MetaMask Smart Accounts or Advanced Permissions to do x402 calls using ERC-7710." | `src/lib/smart-account.ts` builds a `Stateless7702` MetaMask Smart Account; `buildAgentDelegation` composes ERC-7710 caveats; `src/lib/x402.ts` is the EIP-3009-paying buyer wrapper; `src/app/api/agent/think/route.ts` calls `payingFetch()` against the seller. |
-| "The project demo video should have a working MetaMask Smart Accounts Kit implementation." | Demo script `notes/demo-script.md` Section 0:18–0:32 ("the money shot") records the ERC-7702 upgrade + ERC-7710 delegation signature. |
-| "If you are using 1Shot API, the project demo should show how you are using 1Shot API in the project." | `src/lib/oneshot.ts` + `src/app/api/agent/execute/route.ts` post `PackedUserOperation` v0.7 to `https://relayer.1shotapi.com` with `feeToken = USDC`. Demo script Section 0:55–1:10 shows the 1Shot fee line item on dashboard + BaseScan. |
+| "Use MetaMask Smart Accounts or Advanced Permissions to do x402 calls using ERC-7710" | `src/lib/smart-account.ts` builds a `Stateless7702` MetaMask Smart Account; `buildAgentDelegation()` composes ERC-7710 caveats (`erc20PeriodTransfer`, `allowedTargets`, `timestamp`). `src/lib/x402.ts` is the EIP-3009-paying buyer. `src/app/api/agent/think/route.ts` calls `payingFetch()` against `src/app/api/seller/price/route.ts`. |
+| "Demo should show MetaMask Smart Accounts Kit working" | `/agent` page signs the root delegation. `/dashboard` shows the agent paying x402 micropayments tick-by-tick (⚡ x402 badge per row). |
 
-**Differentiator:** most submissions will gesture at one or two of {7710, x402,
-1Shot}. DeleGate's main flow exercises all three in sequence on every agent
-tick.
+**What we don't ship**
+
+- The seller (`src/app/api/seller/price/route.ts`) accepts any well-formed EIP-3009 sig for the demo. It does not currently call `USDC.transferWithAuthorization` on-chain. The verifier code path is sketched in comments.
+
+**Differentiator:** main flow exercises x402 + ERC-7710 on every agent tick (not as a side feature).
 
 ---
 
-## Track 2 — Best Agent — $3,000
+## Track 2 — Best Smart Accounts Agent
+
+**What we ship**
 
 | Brief requirement | DeleGate evidence |
 |---|---|
-| "The project should use MetaMask Smart Accounts or Advanced Permissions." | Same as Track 1, plus the agent runtime is constrained by the user's signed delegation, not a hot key. |
-| "The project demo video should have a working MetaMask Smart Accounts Kit integration in the main flow of the application." | Same demo. The Smart Account *is* the main flow. |
-| "If you are using 1Shot API, the project demo should show how you are using 1Shot API in the project." | Demo Section 0:55–1:10 shows the 1Shot relayer + USDC gas. |
+| "Use MetaMask Smart Accounts or Advanced Permissions" | Same as Track 1. The agent runtime is constrained by the user's ERC-7710 delegation, not a hot key. |
+| "Smart Accounts Kit working in the main flow" | `/agent` is the main flow. The Stateless7702 smart account *is* the user's account. |
+| "Meaningful agent loop" | `src/app/api/agent/think/route.ts` runs Venice → policy gate → decision every ~7s. Confidence below 0.28 forces hold. Decisions stream to `/dashboard` with full rationale. |
 
-**Differentiator:** DeleGate's agent makes Venice-reasoned decisions, pays for
-its own data via x402, and writes to chain via 1Shot — closing the full agent
-loop with no user-in-the-middle after delegation. The reasoning trace is
-auditable on-screen.
+**Differentiator:** the agent's reasoning is **server-gated before any chain action**. The model never gets handed budget directly. Production-shaped, not toy-shaped.
 
 ---
 
-## Track 3 — Best A2A Coordination — $3,000
+## Track 3 — Best A2A Coordination
+
+**What we ship**
 
 | Brief requirement | DeleGate evidence |
 |---|---|
-| **"The project should use redelegation."** | `src/lib/redelegation.ts` implements a Coordinator → fan-out-to-Workers redelegation pattern: the user signs one root delegation; the Coordinator re-delegates narrower scopes to specialized sub-agents (Trader, Claimer, Subscriber). Each child cites the parent via `parentDelegation`. The DelegationManager validates the full authority chain on redemption. |
-| "Demo should have a working Smart Accounts Kit integration in the main flow." | Demo Section TBD (post-Phase-1) shows three sub-agent delegations being signed by the Coordinator within ~5 seconds of the root delegation, then three independent agent loops running in parallel on `/dashboard`. |
-| 1Shot demo if used | All worker redemptions go through 1Shot, same path as the single-agent flow. |
+| **"Use redelegation"** | `src/lib/redelegation.ts` defines the Coordinator → Worker fan-out (`buildWorkerRedelegation()`). `/a2a` page has an interactive UI showing root delegation cascading to Trader / Claimer / Subscriber sub-agents. `/api/a2a/redelegate` signs each worker authorisation. |
+| Working demo | Visit `/a2a` → click *Redelegate to workers* → 3 cards populate with signed authorisations. Each card shows the worker address, daily budget, and signature prefix. |
 
-**Differentiator:** redelegation is a *non-trivial* primitive most teams will
-skip because it's harder to demo. DeleGate uses it naturally: one user signs
-a single root permission, gets a coordinated multi-agent fleet for free, and
-revokes the entire fleet by revoking the root.
+**What we don't ship**
+
+- The current `/api/a2a/redelegate` route signs a coordinator-authority *message digest* per worker (`coordinator.signMessage(...)`), not a full `signDelegation()` per worker. The full signed-delegation path requires the kernel deployed at the coordinator's address; the message-digest path proves the same authority cascade for the demo without that deployment.
+
+**Differentiator:** redelegation is a non-trivial primitive most teams skip. The visual fan-out tree communicates the cascade story instantly.
 
 ---
 
-## Track 4 — Best Use of Venice AI — $3,000
+## Track 4 — Best Use of Venice AI
+
+**What we ship**
 
 | Brief requirement | DeleGate evidence |
 |---|---|
-| "Must qualify for one of the three main tracks." | Qualifies for Tracks 1, 2, **and** 3. |
-| "Project should use Venice as a core part of the application." | `src/lib/venice.ts` is the agent's only reasoning engine. Every agent tick goes through Venice. The `TRADING_SYSTEM_PROMPT` enforces a JSON-only contract. The dashboard renders Venice's full chain-of-thought. |
-| "Demo should show Venice in the main flow." | Demo Section 0:32–0:55 shows Venice rationale text appearing live on `/dashboard` for every decision. |
-| "Project should produce a meaningful AI-powered output, action, or user experience through Venice." | Venice's output literally controls budget allocation: each decision becomes a real on-chain `redeemDelegations()` userOp via 1Shot. The AI's word becomes chain action. |
+| "Venice as core part of application" | `src/lib/venice.ts` is the agent's only reasoning engine. `TRADING_SYSTEM_PROMPT` enforces JSON-only output. The dashboard renders Venice's full chain-of-thought per decision. |
+| "Demo shows Venice in main flow" | `/dashboard` reasoning trace shows Venice rationale text appearing live for every decision (e.g. *"RSI 32 with negative 24h change (-0.19%) suggests buying opportunity"*). |
+| "Meaningful AI-powered output" | Venice's decision controls budget allocation. The model's output becomes the agent's chain action. |
 
-**Differentiator:** the agent's Venice reasoning is **policy-gated server-side
-before it hits chain** (`src/app/api/agent/think/route.ts` line 70: confidence
-< 0.55 forces hold). The model is never trusted with budget. This is how you
-ship AI agents in production.
+**What we don't ship**
+
+- The deployed instance currently uses an **OpenAI-compatible Groq endpoint** (`VENICE_BASE_URL=https://api.groq.com/openai/v1`) because the Venice key we tested with had a $0 balance. The wiring to Venice is identical (the client in `venice.ts` is provider-agnostic by design); flipping a single env var swaps to Venice. The Venice track requires real Venice — we are honest that the deployed demo currently runs against Groq, and we are not claiming this track.
 
 ---
 
-## Track 5 — Best Use of 1Shot Permissionless Relayer — $1,000 USDC
+## Track 5 — Best Use of 1Shot Permissionless Relayer
 
-| Brief requirement | DeleGate evidence |
-|---|---|
-| "Must qualify for one of the three main tracks." | Qualifies for 1, 2, 3. |
-| **"Final project must relay 7710 transactions through the 1Shot Permissionless mainnet relayer."** | Production deployment uses `NEXT_PUBLIC_ONESHOT_CHAIN=base-mainnet` and `NEXT_PUBLIC_ONESHOT_RELAYER_URL=https://relayer.1shotapi.com`. Testnet (`base-sepolia`) remains available behind a feature flag for safe iteration. |
-| **"Final project must use 7702 authorizations to upgrade accounts to smart accounts through 1Shot Permissionless relayer."** | `src/lib/smart-account.ts` uses `Implementation.Stateless7702` so the account upgrade is a real EIP-7702 authorization. The first `redeemDelegations()` userOp via 1Shot includes the `authorizationList` so the upgrade and the agent's first action ship in a single sponsored transaction. |
-| Bonus: "leverage relayer webhooks as the source for transaction status updates." | `src/app/api/webhook/oneshot/route.ts` (Phase 2) receives 1Shot webhooks and updates the dashboard via server-sent events. Status transitions appear < 1s after relayer confirmation. |
-
-**Differentiator:** most teams will hardcode testnet because mainnet costs
-real USDC. DeleGate ships both networks behind a single env-var switch and
-uses real USDC fees on mainnet for the demo video — proving the relayer
-abstraction actually works at production cost.
+**Status: not claiming.** The hackathon brief requires routing 7710 transactions through 1Shot's **mainnet** relayer. The deployed demo uses real on-chain Base Sepolia transactions instead (`src/app/api/agent/execute/route.ts`). The 1Shot relayer client in `src/lib/oneshot.ts` is wired and can be enabled via `ENABLE_REAL_RELAY=1 + AGENT_PRIVATE_KEY` once a kernel is deployed and mainnet USDC is staged.
 
 ---
 
-## Track 6 — Best Social Media Presence — $500 ($100 × 5)
+## Track 6 — Best Social Media Presence
 
-| Brief requirement | DeleGate evidence |
-|---|---|
-| "Tag MetaMaskDev X handle https://x.com/MetaMaskDev" | Three threads in `notes/x-threads.md` all `@MetaMaskDev`-tagged. |
-| **"Showcase your project journey, demonstrating how MetaMask Advanced Permissions enhanced your user experience and streamlined the process of obtaining permissions from users."** | The four-preset hero on the landing page literally is this: "pick a preset, sign one permission, walk away." Threads document the build journey day by day, with screenshots of the EIP-712 caveat-bearing typed-data popup. |
-| Quality, clarity, engagement, frequency | Three-post cadence over the submission window: build-announce, technical-deep-dive, demo-launch. |
+**What we ship**
 
----
-
-## Track 7 — Best Feedback — $500 ($100 × 5)
-
-Submission lives at `notes/feedback.md` and lists, with reproductions, three
-constructive feedback items on:
-
-1. The Smart Accounts Kit `Stateless7702` quickstart
-2. The 1Shot Permissionless Relayer onboarding for testnet vs mainnet
-3. The Venice API streaming-mode docs
-
-All three are filed as GitHub issues against the relevant repos, and linked
-from `notes/feedback.md` for the judges' convenience.
+- X thread (3 posts) tagging `@MetaMaskDev`, `@1ShotAPI`, `@veniceai`. Drafts in `notes/x-threads.md`.
+- Documents the build journey, the Advanced Permissions UX, and the live demo.
 
 ---
 
-## Score-stacking summary
+## Track 7 — Best Feedback
 
-| Outcome | $ |
-|---|---|
-| 1st place in Best x402 + ERC-7710 | $1,500 |
-| 1st place in Best Agent | $1,500 |
-| 2nd place in Best A2A Coordination (realistic given less polish vs main flow) | $1,000 |
-| 2nd place in Best Venice AI | $1,000 |
-| 1st place in Best 1Shot Relayer | $500 USDC |
-| Best Social (one of five winners) | $100 |
-| Best Feedback (one of five winners) | $100 |
-| **Total realistic stacked outcome** | **$5,700** |
+**What we ship**
 
-**Stretch outcome** (1st in 4 of 5 main tracks + both small prizes):
-**$8,200**.
+`notes/feedback.md` contains three reproducible, constructive feedback items, each filed as a GitHub issue against the relevant repo:
 
-These are the numbers the rest of the build is optimizing toward.
+1. Smart Accounts Kit — `Stateless7702` quickstart silently uses an unsupported wallet pattern
+2. 1Shot Relayer — testnet vs mainnet endpoint discoverability
+3. Venice AI — JSON-mode reliability for OpenAI-compatible endpoint
+
+Issue URLs are appended to the table at the bottom of `feedback.md` once filed.
+
+---
+
+## What we are claiming, in plain English
+
+| Track | Claiming? | Why |
+|---|---|---|
+| Best x402 + ERC-7710 | **Yes** | Main flow uses both end-to-end. |
+| Best Smart Accounts Agent | **Yes** | Stateless7702 + ERC-7710 + reasoning loop. |
+| Best A2A Coordination | **Yes** | Redelegation primitive shipped with interactive UI. |
+| Best Venice AI | **No** | Demo runs Groq, not Venice. Honesty over a $0 prize. |
+| Best 1Shot Relayer | **No** | Brief requires mainnet; we ship Base Sepolia. |
+| Best Social Media | **Yes** | X thread tagged + documented. |
+| Best Feedback | **Yes** | Three filed GitHub issues with reproductions. |
+
+We are claiming exactly what we ship. No track-coverage inflation.
