@@ -1,7 +1,26 @@
 import { NextResponse } from "next/server";
 import { privateKeyToAccount } from "viem/accounts";
 import type { Address, Hex } from "viem";
-import { defaultWorkerFleet, type WorkerKind } from "@/lib/redelegation";
+import { USDC_ADDRESS, UNISWAP_ROUTER, WETH_ADDRESS } from "@/lib/constants";
+
+type WorkerKind = "trader" | "claimer" | "subscriber";
+
+/**
+ * Server-safe copy of the default worker fleet. The client copy lives in
+ * src/lib/redelegation.ts but is marked 'use client' (it depends on the
+ * smart-accounts-kit browser SDK), so we re-derive the addresses here.
+ */
+function defaultWorkerFleet(coordinatorAgent: Address) {
+  const offset = (n: number): Address =>
+    `0x${(BigInt(coordinatorAgent) + BigInt(n))
+      .toString(16)
+      .padStart(40, "0")}` as Address;
+  return [
+    { kind: "trader" as WorkerKind, worker: offset(1), dailyUsdc: 300, allowedTargets: [USDC_ADDRESS, WETH_ADDRESS, UNISWAP_ROUTER] },
+    { kind: "claimer" as WorkerKind, worker: offset(2), dailyUsdc: 30, allowedTargets: [USDC_ADDRESS] },
+    { kind: "subscriber" as WorkerKind, worker: offset(3), dailyUsdc: 15, allowedTargets: [USDC_ADDRESS] },
+  ];
+}
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,10 +58,10 @@ export async function POST(req: Request) {
   // coordinator's authority without requiring the deployed kernel on testnet.
   const workers = await Promise.all(
     fleet.map(async (w) => {
-      const digest = `redelegate:${w.kind}:${w.worker}:${body.coordinatorAddress}` as Hex;
-      const sig = await coordinator.signMessage({ message: digest });
+      const message = `redelegate:${w.kind}:${w.worker}:${body.coordinatorAddress}`;
+      const sig: Hex = await coordinator.signMessage({ message });
       return {
-        kind: w.kind as WorkerKind,
+        kind: w.kind,
         address: w.worker,
         sig,
         dailyUsdc: w.dailyUsdc,
