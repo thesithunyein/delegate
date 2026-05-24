@@ -6,8 +6,10 @@ Trade, rebalance, claim airdrops, pay subscriptions — without giving up your k
 | | |
 |---|---|
 | **Live demo** | https://delegate-hackathon.vercel.app |
-| **Network** | Base Sepolia (`84532`) |
-| **Stack** | MetaMask Smart Accounts Kit · 1Shot Relayer · Venice AI · x402 |
+| **Network** | Ethereum Sepolia (`11155111`) — chain swappable via env |
+| **First live agent tx** | [0x34da678bafcd3d6bfe59c1fb789dab03f06e40f1c2beb438c1648f8d70ff1e11](https://sepolia.etherscan.io/tx/0x34da678bafcd3d6bfe59c1fb789dab03f06e40f1c2beb438c1648f8d70ff1e11) |
+| **Agent EOA** | [`0x400377a07169be08f98546B63B5fE86B66328779`](https://sepolia.etherscan.io/address/0x400377a07169be08f98546B63B5fE86B66328779) |
+| **Stack** | MetaMask Smart Accounts Kit · Venice/Groq · x402 · Sepolia |
 | **Hackathon** | MetaMask Smart Accounts Kit × 1Shot × Venice AI Dev Cook-Off |
 
 ---
@@ -159,11 +161,12 @@ pnpm dev                                # http://localhost:3000
 
 We optimise for clarity over hand-waving:
 
-- The dashboard's `tx (preview)` badge is **clearly labelled** as a demo hash unless `ENABLE_REAL_RELAY=1` is set — judges can verify the relayer code path exists in `src/lib/oneshot.ts` without us pretending fake hashes are real.
+- **Onchain settlement is live on Ethereum Sepolia.** When `AGENT_PRIVATE_KEY` is configured (deployed demo has it), every Buy/Sell decision broadcasts a real Sepolia tx with the agent's intent encoded in calldata. First live tx: [`0x34da678b…`](https://sepolia.etherscan.io/tx/0x34da678bafcd3d6bfe59c1fb789dab03f06e40f1c2beb438c1648f8d70ff1e11). Without the key configured, the dashboard renders clearly-labelled `tx (preview)` badges instead.
 - The market data seller in `src/app/api/seller/price/route.ts` accepts any well-formed EIP-3009 sig for the demo. The verifier code path (`USDC.transferWithAuthorization` → settle) is sketched in comments. Production would route through Coinbase's facilitator.
 - A2A redelegation signs a coordinator-authority message digest in `src/app/api/a2a/redelegate/route.ts`. Full `signDelegation()` per worker requires the kernel to be deployed at the coordinator's address; the message-digest path proves the same authority cascade without that deployment.
+- The deployed AI runs **Groq** (via the OpenAI-compatible `VENICE_BASE_URL=https://api.groq.com/openai/v1`) instead of Venice. The wiring is provider-agnostic; flipping one env var swaps to Venice. We are not claiming the Venice track for this reason.
 
-These are documented choices, not bugs. The architecture supports the full path; flip the flag.
+These are documented choices, not hidden stubs.
 
 ---
 
