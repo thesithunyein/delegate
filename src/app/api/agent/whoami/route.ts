@@ -33,12 +33,19 @@ export async function GET() {
     // RPC unreachable — return address anyway
   }
 
+  const isSepolia = CHAIN.id === 11155111;
+  const faucet = isSepolia
+    ? "https://sepolia-faucet.pk910.de/" // PoW faucet, no signup, works anywhere
+    : "https://www.alchemy.com/faucets/base-sepolia";
+
   return NextResponse.json({
     configured: true,
+    chain: CHAIN.name,
+    chainId: CHAIN.id,
     address: account.address,
     balanceEth: formatEther(balanceWei),
     fundedForBroadcast: balanceWei > 0n,
-    faucet: "https://www.alchemy.com/faucets/base-sepolia",
+    faucet,
     explorer: `${EXPLORER_URL}/address/${account.address}`,
   });
 }
