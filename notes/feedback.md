@@ -140,6 +140,6 @@ Filing dates and issue URLs will be appended below as they're submitted.
 
 | # | Repo | URL | Filed |
 |---|---|---|---|
-| 1 | `MetaMask/smart-accounts-kit` | TBD | TBD |
-| 2 | `1shotapi/relayer-docs` | TBD | TBD |
-| 3 | `veniceai/docs` | TBD | TBD |
+| 1 | `MetaMask/smart-accounts-kit` | https://github.com/MetaMask/smart-accounts-kit/issues/247 | 2026-05-25 |
+| 2 | `1Shot-API/1Shot-API-Examples` | https://github.com/1Shot-API/1Shot-API-Examples/issues/1 | 2026-05-25 |
+| 3 | `veniceai/api-docs` | https://github.com/veniceai/api-docs/issues/264 | 2026-05-25 |
