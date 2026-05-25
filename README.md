@@ -6,6 +6,7 @@ Trade, rebalance, claim airdrops, pay subscriptions — without giving up your k
 | | |
 |---|---|
 | **Live demo** | https://delegate-hackathon.vercel.app |
+| **Video walkthrough** | https://youtu.be/Dq91LsCRybM |
 | **Network** | Ethereum Sepolia (`11155111`) — chain swappable via env |
 | **First live agent tx** | [0x34da678bafcd3d6bfe59c1fb789dab03f06e40f1c2beb438c1648f8d70ff1e11](https://sepolia.etherscan.io/tx/0x34da678bafcd3d6bfe59c1fb789dab03f06e40f1c2beb438c1648f8d70ff1e11) |
 | **Agent EOA** | [`0x400377a07169be08f98546B63B5fE86B66328779`](https://sepolia.etherscan.io/address/0x400377a07169be08f98546B63B5fE86B66328779) |
@@ -173,6 +174,7 @@ These are documented choices, not hidden stubs.
 ## Submission
 
 - **Live:** https://delegate-hackathon.vercel.app
+- **Video:** https://youtu.be/Dq91LsCRybM
 - **Code:** https://github.com/thesithunyein/delegate
 - **X thread:** https://x.com/thesithunyein/status/2058264074958553593
 - **Feedback issues:** see `notes/feedback.md`
