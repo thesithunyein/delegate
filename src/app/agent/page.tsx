@@ -213,12 +213,19 @@ function AgentInner() {
                   hint="Hard cap enforced by an erc20Period caveat. Resets every 24h."
                 >
                   <input
-                    type="number"
-                    min={10}
-                    max={5000}
-                    step={10}
+                    type="text"
+                    inputMode="numeric"
                     value={dailyUsdc}
-                    onChange={(e) => setDailyUsdc(Number(e.target.value))}
+                    onChange={(e) => {
+                      // Strip non-digits; treat empty as 0. Using type="text"
+                      // (not "number") so React can authoritatively rewrite
+                      // the displayed string each render — number inputs let
+                      // leading zeros like "0200" persist in the DOM even when
+                      // the controlled value is 200.
+                      const cleaned = e.target.value.replace(/[^0-9]/g, "");
+                      const n = cleaned === "" ? 0 : Math.min(5000, Number(cleaned));
+                      setDailyUsdc(n);
+                    }}
                     className="h-11 w-full rounded-lg border border-border bg-background px-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </Field>
